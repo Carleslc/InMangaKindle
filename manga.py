@@ -91,17 +91,26 @@ def download(filename, url, directory='.', extension='png', text='', ok=200):
         text = text if text else path
         separation = ' ' * (20 - len(text))
         print_colored(f'{text}{separation}- Already exists', Fore.YELLOW)
-        return
+        return False
     req = get(url)
     if success(req, text, ok, print_ok=bool(text)):
         data = req.content
         write_file(path, data)
+        return True
+    return False
 
 def manga_directory(manga):
     return f'{MANGA_DIR}/{manga}'
 
 def chapter_directory(manga, chapter):
     return f'{manga_directory(manga)}/{chapter}'
+
+def ebooks(manga, extension):
+    for file in sorted([f for f in os.listdir(MANGA_DIR)]):
+        path = os.path.abspath(f'{MANGA_DIR}/{file}')
+        if os.path.isfile(path) and file.startswith(manga) and file.endswith(extension):
+            filename = file.split('.')[-2]
+            yield filename, path
 
 def load_json(data, *keys):
     data = json.loads(data)
@@ -157,17 +166,24 @@ if __name__ == "__main__":
     exit_if_fails(search)
 
     search_href = BeautifulSoup(search.content, 'html.parser').find_all(True, recursive=False)
+
     results = []
+    match = False
     for result in search_href:
         manga_href = result.get('href')
         if manga_href is None:
             error(f"Manga '{MANGA}' not found")
-        manga_split = manga_href.split('/')
-        manga = manga_split[-2]
-        uuid = manga_split[-1]
-        results.append(manga.replace('-', ' '))
-    if len(search_href) > 1:
-        error('There are several results, please select one of these:\n' + '\n'.join([r.upper().replace(MANGA.upper(), '', 1).strip() for r in results]))
+        manga = manga_href.split('/')[-2] # encoded title
+        uuid = manga_href.split('/')[-1]
+        manga_title = result.find('h4').get_text().strip() # may contain special characters
+        if manga_title.upper() == MANGA.upper():
+            match = True
+            break
+        results.append(manga_title)
+
+    if not match and len(search_href) > 1:
+        upper_titles = [title.upper() for title in results]
+        error('There are several results, please select one of these:\n' + '\n'.join(upper_titles))
 
     # RETRIEVE CHAPTERS
 
@@ -191,19 +207,17 @@ if __name__ == "__main__":
         chapters[last_number] = last['Identification']
         CHAPTERS.add(int(last_number))
 
-    manga_pretty = manga.replace('-', ' ')
-
     # DOWNLOAD CHAPTERS
+    downloaded = False
 
     for chapter in CHAPTERS:
         uuid = chapters.get(chapter)
         if uuid is None:
-            print_colored(f'{manga_pretty} {chapter} not found', Fore.RED)
+            print_colored(f'{manga_title} {chapter} not found', Fore.RED)
         else:
-            print_colored(f'Downloading {manga_pretty} {chapter}', Fore.YELLOW, Style.BRIGHT)
+            print_colored(f'Downloading {manga_title} {chapter}', Fore.YELLOW, Style.BRIGHT)
 
             url = f"{MANGA_WEBSITE}/{manga}/{chapter}/{uuid}"
-
             chapter_dir = chapter_directory(manga, chapter)
             page = get(url)
             if success(page, print_ok=False):
@@ -214,8 +228,10 @@ if __name__ == "__main__":
                     page_number = int(page.get_text())
                     url = IMAGE_WEBSITE + page_id
                     download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)')
+                downloaded = True
 
-    # CONVERT TO MOBI FOR E-READERS
+    if not downloaded:
+        error("No chapters found")
 
     extension = ''
     directory = manga_directory(manga)
@@ -223,6 +239,11 @@ if __name__ == "__main__":
     if args.format != 'PNG':
         print_colored(f'Converting to {args.format.upper()}...', Fore.BLUE, Style.BRIGHT)
 
+        # REMOVE OLD CONVERTED FILES
+        for ebook, path in ebooks(manga, extension):
+            os.remove(path)
+
+        # CONVERT TO E-READER FORMAT
         argv = ['-p', args.profile, '--manga-style', '--hq', '-f', args.format, '--batchsplit', single(args.single), '-u', '-r', split_rotate_2_pages(args.rotate), directory]
         if not args.fullsize:
             argv.append('-s')
@@ -232,7 +253,6 @@ if __name__ == "__main__":
         saved_chapters = sorted([int(n) for n in os.listdir(directory) if n.isdigit()])
 
         print_colored('Saving files...', Fore.GREEN, Style.BRIGHT)
-
         extension = f'.{args.format.lower()}'
 
         # Rename KindleComicConverter files with real chapter names
@@ -243,20 +263,17 @@ if __name__ == "__main__":
             print_colored(f'DONE: {os.path.abspath(new_path)}', Fore.GREEN, Style.BRIGHT)
         else:
             i = 0
-            for file in sorted([f for f in os.listdir(MANGA_DIR)]):
-                path = os.path.abspath(f'{MANGA_DIR}/{file}')
-                if os.path.isfile(path) and file.startswith(manga) and file.endswith(extension):
-                    filename = file.split('.')[-2]
-                    ebook_file = filename.split(' ')
-                    ebook_name = ebook_file[0]
-                    ebook_number = 0 if len(ebook_file) == 1 else int(ebook_file[1])
-                    real_chapter_number = saved_chapters[i]
-                    if ebook_number != real_chapter_number:
-                        new_path = f'{MANGA_DIR}/{ebook_name} {real_chapter_number}{extension}'
-                        os.rename(path, new_path)
-                        path = new_path
-                    if real_chapter_number in CHAPTERS:
-                        print_colored(os.path.abspath(path), Fore.GREEN, Style.BRIGHT)
-                    i += 1
+            for ebook, path in ebooks(manga, extension):
+                ebook_parts = ebook.split(' ')
+                ebook_name = ebook_parts[0]
+                ebook_number = 0 if len(ebook_parts) == 1 else int(ebook_parts[1])
+                real_chapter_number = saved_chapters[i]
+                if ebook_number != real_chapter_number:
+                    new_path = f'{MANGA_DIR}/{ebook_name} {real_chapter_number}{extension}'
+                    os.rename(path, new_path)
+                    path = new_path
+                if real_chapter_number in CHAPTERS:
+                    print_colored(os.path.abspath(path), Fore.GREEN, Style.BRIGHT)
+                i += 1
     else:
         print_colored(f'DONE: {os.path.abspath(directory)}', Fore.GREEN, Style.BRIGHT)

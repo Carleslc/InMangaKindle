@@ -30,8 +30,7 @@ def set_args():
     global args
     parser = argparse.ArgumentParser()
     parser.add_argument("manga", help="manga to download")
-    parser.add_argument("--last", action='store_true', help="download the last chapter")
-    parser.add_argument("--chapters", "--chapter", help='chapters to download in addition to --last argument. Format: start..end or chapters with commas. Example: --chapters 3..12 will download chapters from 3 to 12, --chapter 3 will download only chapter 3, --chapters "3, 12" will download chapters 3 and 12, --chapters "3..12, 15" will download chapters from 3 to 12 and also chapter 15. If this argument is not provided all chapters will be downloaded.')
+    parser.add_argument("--chapters", "--chapter", help='chapters to download. Format: start..end or chapters with commas. Example: --chapters "3..last" will download chapters from 3 to the last chapter, --chapter 3 will download only chapter 3, --chapters "3, 12" will download chapters 3 and 12, --chapters "3..12, 15" will download chapters from 3 to 12 and also chapter 15. If this argument is not provided all chapters will be downloaded.')
     parser.add_argument("--directory", help=f"directory to save downloads. Default: {MANGA_DIR}", default=MANGA_DIR)
     parser.add_argument("--single", action='store_true', help="pack all chapters in only one e-reader file. If this argument is not provided every chapter will be in a separated file")
     parser.add_argument("--rotate", action='store_true', help="rotate double pages. If this argument is not provided double pages will be splitted in 2 different pages")
@@ -118,16 +117,20 @@ def load_json(data, *keys):
         data = json.loads(data.get(key))
     return data.get(keys[-1])
 
-def parse_chapters_range(chapters):
+def parse_chapters_range(chapters, last):
     global CHAPTERS
+
+    def get_number(number):
+        return last if number == 'last' else int(number)
+
     ranges = chapters.replace(' ', '').split(',')
     try:
         for r in ranges:
             split = r.split('..')
             if len(split) == 1:
-                CHAPTERS.add(int(split[0]))
+                CHAPTERS.add(get_number(split[0]))
             else:
-                CHAPTERS.update(range(int(split[0]), int(split[1]) + 1))
+                CHAPTERS.update(range(get_number(split[0]), get_number(split[1]) + 1))
     except ValueError:
         error(f'Invalid chapters format')
 
@@ -147,10 +150,7 @@ if __name__ == "__main__":
 
     CHAPTERS = set()
 
-    download_all = not args.chapters and not args.last
-
-    if args.chapters:
-        parse_chapters_range(args.chapters)
+    download_all = not args.chapters
 
     if not args.profile:
         args.profile = 'KPW'
@@ -193,19 +193,14 @@ if __name__ == "__main__":
     chapters_full = load_json(chapters_json.content, 'data', 'result')
     chapters = {}
 
-    last = None
+    if args.chapters:
+        last = max([int(chapter['Number']) for chapter in chapters_full])
+        parse_chapters_range(args.chapters, last)
 
     for chapter in chapters_full:
         number = chapter['Number']
-        if args.last and (last == None or int(last['Number']) < int(number)):
-            last = chapter
         if download_all or number in CHAPTERS:
             chapters[number] = chapter['Identification']
-
-    if last and args.last:
-        last_number = last['Number']
-        chapters[last_number] = last['Identification']
-        CHAPTERS.add(int(last_number))
 
     # DOWNLOAD CHAPTERS
     downloaded = False

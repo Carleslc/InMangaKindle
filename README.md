@@ -55,4 +55,4 @@ Default screen resolution is for Kindle Paperwhite device profile.
 
 - `python3.6 manga.py "shingeki no kyojin" --chapter last --format EPUB` will download the last chapter of _Shingeki no Kyojin_ as EPUB
 
-- `python3.6 manga.py "dragon ball" --chapter "1, 2, 4..6"` will download chapters 1, 2, 4, 5, 6 of _Dragon Ball_ as different MOBI files
+- `python3.6 manga.py "dragon ball" --chapters "1, 2, 8..11"` will download chapters 1, 2, 8, 9, 10, 11 of _Dragon Ball_ as different MOBI files

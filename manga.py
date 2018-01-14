@@ -34,7 +34,7 @@ def set_args():
     parser.add_argument("--directory", help=f"directory to save downloads. Default: {MANGA_DIR}", default=MANGA_DIR)
     parser.add_argument("--single", action='store_true', help="pack all chapters in only one e-reader file. If this argument is not provided every chapter will be in a separated file")
     parser.add_argument("--rotate", action='store_true', help="rotate double pages. If this argument is not provided double pages will be splitted in 2 different pages")
-    parser.add_argument("--profile", help='Device profile (Available options: K1, K2, K34, K578,KDX, KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD, KoAH2O, KoAO) [Default = KPW (Kindle Paperwhite)]', default='KPW')
+    parser.add_argument("--profile", help='Device profile (Available options: K1, K2, K34, K578, KDX, KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD, KoAH2O, KoAO) [Default = KPW (Kindle Paperwhite)]', default='KPW')
     parser.add_argument("--format", help='Output format (Available options: PNG, MOBI, EPUB, CBZ) [Default = MOBI]. If PNG is selected then no conversion to e-reader file will be done', default='MOBI')
     parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
     args = parser.parse_args()
@@ -203,6 +203,7 @@ if __name__ == "__main__":
             chapters[number] = chapter['Identification']
 
     # DOWNLOAD CHAPTERS
+    CHAPTERS = sorted(CHAPTERS)
     downloaded = False
 
     for chapter in CHAPTERS:
@@ -228,47 +229,35 @@ if __name__ == "__main__":
     if not downloaded:
         error("No chapters found")
 
-    extension = ''
+    extension = f'.{args.format.lower()}'
     directory = manga_directory(manga)
 
     if args.format != 'PNG':
         print_colored(f'Converting to {args.format.upper()}...', Fore.BLUE, Style.BRIGHT)
 
-        # REMOVE OLD CONVERTED FILES
-        for ebook, path in ebooks(manga, extension):
-            os.remove(path)
-
         # CONVERT TO E-READER FORMAT
-        argv = ['-p', args.profile, '--manga-style', '--hq', '-f', args.format, '--batchsplit', single(args.single), '-u', '-r', split_rotate_2_pages(args.rotate), directory]
+        freeze_support()
+
+        argv = ['--output', MANGA_DIR, '-p', args.profile, '--manga-style', '--hq', '-f', args.format, '--batchsplit', single(args.single), '-u', '-r', split_rotate_2_pages(args.rotate)]
+        
         if not args.fullsize:
             argv.append('-s')
-        freeze_support()
-        manga2ebook(argv)
 
-        saved_chapters = sorted([int(n) for n in os.listdir(directory) if n.isdigit()])
-
-        print_colored('Saving files...', Fore.GREEN, Style.BRIGHT)
-        extension = f'.{args.format.lower()}'
-
-        # Rename KindleComicConverter files with real chapter names
         if args.single:
-            path = os.path.abspath(f'{MANGA_DIR}/{manga}{extension}')
-            new_path = f'{MANGA_DIR}/{manga}-{saved_chapters[0]}-{saved_chapters[-1]}{extension}'
-            os.rename(path, new_path)
-            print_colored(f'DONE: {os.path.abspath(new_path)}', Fore.GREEN, Style.BRIGHT)
+            min_chapter = min(CHAPTERS)
+            max_chapter = max(CHAPTERS)
+            chapter_range = str(min_chapter) if min_chapter == max_chapter else f'{min_chapter}-{max_chapter}'
+            title = f'{manga_title} {chapter_range}'
+            print_colored(title, Fore.BLUE)
+            argv = argv + ['--title', title, directory] # all chapters in manga directory are packed
+            manga2ebook(argv)
+            os.rename(f'{MANGA_DIR}/{manga}{extension}', f'{MANGA_DIR}/{manga} {chapter_range}{extension}')
         else:
-            i = 0
-            for ebook, path in ebooks(manga, extension):
-                ebook_parts = ebook.split(' ')
-                ebook_name = ebook_parts[0]
-                ebook_number = 0 if len(ebook_parts) == 1 else int(ebook_parts[1])
-                real_chapter_number = saved_chapters[i]
-                if ebook_number != real_chapter_number:
-                    new_path = f'{MANGA_DIR}/{ebook_name} {real_chapter_number}{extension}'
-                    os.rename(path, new_path)
-                    path = new_path
-                if real_chapter_number in CHAPTERS:
-                    print_colored(os.path.abspath(path), Fore.GREEN, Style.BRIGHT)
-                i += 1
+            for chapter in CHAPTERS:
+                title = f'{manga_title} {chapter}'
+                print_colored(title, Fore.BLUE)
+                argv_chapter = argv + ['--title', title, chapter_directory(manga, chapter)]
+                manga2ebook(argv_chapter)
+                os.rename(f'{MANGA_DIR}/{chapter}{extension}', f'{MANGA_DIR}/{manga} {chapter}{extension}')
     else:
         print_colored(f'DONE: {os.path.abspath(directory)}', Fore.GREEN, Style.BRIGHT)

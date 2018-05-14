@@ -60,6 +60,6 @@ Default screen resolution is for Kindle Paperwhite device profile.
 
 - `python manga.py "dragon ball" --chapters "1, 2, 8..11"` will download chapters 1, 2, 8, 9, 10, 11 of _Dragon Ball_ as different MOBI files
 
-### TODO
+### TO DO
 - Explain with images how this works (scraping)
 - Additional chapter placeholder "lastDownloaded..last"

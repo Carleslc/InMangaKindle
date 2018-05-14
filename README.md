@@ -3,7 +3,8 @@
 
 ### Dependencies
 
-- [Kindle Comic Converter](https://github.com/ciromattia/kcc)
+- [Python 3.6](https://www.python.org/downloads/)
+- (EPUB/MOBI format) [Kindle Comic Converter](https://github.com/ciromattia/kcc)
 - (MOBI format) [KindleGen](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765211)
 - (Optional) [SendToKindle](https://www.amazon.com/gp/sendtokindle)
 
@@ -40,7 +41,7 @@ optional arguments:
   --profile PROFILE     Device profile (Available options: K1, K2, K34, K578,
                         KDX, KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD,
                         KoAH2O, KoAO) [Default = KPW (Kindle Paperwhite)]
-  --format FORMAT       Output format (Available options: PNG, MOBI, EPUB,
+  --format FORMAT       Output format (Available options: PNG, PDF, MOBI, EPUB,
                         CBZ) [Default = MOBI]. If PNG is selected then no
                         conversion to e-reader file will be done
   --fullsize            Do not stretch images to the profile's device
@@ -51,8 +52,14 @@ optional arguments:
 
 Default screen resolution is for Kindle Paperwhite device profile.
 
-- `python3.6 manga.py "one piece" --chapters 880..last --single` will download _One Piece_ chapters from 880 to the last chapter available and pack them into one single MOBI file
+- `python manga.py "one piece" --chapters 880..last --single` will download _One Piece_ chapters from 880 to the last chapter available and pack them into one single MOBI file
 
-- `python3.6 manga.py "shingeki no kyojin" --chapter last --format EPUB` will download the last chapter of _Shingeki no Kyojin_ as EPUB
+- `python manga.py "one piece" --chapters 880..last --format PDF --single` will result in the same as above but in PDF instead MOBI
 
-- `python3.6 manga.py "dragon ball" --chapters "1, 2, 8..11"` will download chapters 1, 2, 8, 9, 10, 11 of _Dragon Ball_ as different MOBI files
+- `python manga.py "shingeki no kyojin" --chapter last --format EPUB` will download the last chapter of _Shingeki no Kyojin_ as EPUB
+
+- `python manga.py "dragon ball" --chapters "1, 2, 8..11"` will download chapters 1, 2, 8, 9, 10, 11 of _Dragon Ball_ as different MOBI files
+
+### TODO
+- Explain with images how this works (scraping)
+- Additional chapter placeholder "lastDownloaded..last"

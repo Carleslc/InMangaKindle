@@ -10,7 +10,6 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from colorama import Fore, Style
 from multiprocessing import freeze_support
-from kindlecomicconverter.comic2ebook import main as manga2ebook
 
 WEBSITE = "https://inmanga.com"
 IMAGE_WEBSITE = f"{WEBSITE}/page/getPageImage/?identification="
@@ -35,7 +34,7 @@ def set_args():
     parser.add_argument("--single", action='store_true', help="pack all chapters in only one e-reader file. If this argument is not provided every chapter will be in a separated file")
     parser.add_argument("--rotate", action='store_true', help="rotate double pages. If this argument is not provided double pages will be splitted in 2 different pages")
     parser.add_argument("--profile", help='Device profile (Available options: K1, K2, K34, K578, KDX, KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD, KoAH2O, KoAO) [Default = KPW (Kindle Paperwhite)]', default='KPW')
-    parser.add_argument("--format", help='Output format (Available options: PNG, MOBI, EPUB, CBZ) [Default = MOBI]. If PNG is selected then no conversion to e-reader file will be done', default='MOBI')
+    parser.add_argument("--format", help='Output format (Available options: PNG, PDF, MOBI, EPUB, CBZ) [Default = MOBI]. If PNG is selected then no conversion to e-reader file will be done', default='MOBI')
     parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
     args = parser.parse_args()
 
@@ -104,12 +103,19 @@ def manga_directory(manga):
 def chapter_directory(manga, chapter):
     return f'{manga_directory(manga)}/{chapter}'
 
-def ebooks(manga, extension):
-    for file in sorted([f for f in os.listdir(MANGA_DIR)]):
-        path = os.path.abspath(f'{MANGA_DIR}/{file}')
-        if os.path.isfile(path) and file.startswith(manga) and file.endswith(extension):
-            filename = file.split('.')[-2]
-            yield filename, path
+def check_exists_file(path):
+    if os.path.isfile(path):
+        print_colored(f'{path} - Already exists', Fore.YELLOW)
+        return True
+    return False
+
+def files(dir, extension=''):
+    def filename(file):
+        return file.split('.')[-2]
+    for file in os.listdir(dir):
+        path = os.path.abspath(f'{dir}/{file}')
+        if os.path.isfile(path) and file.endswith(extension):
+            yield filename(file), path
 
 def load_json(data, *keys):
     data = json.loads(data)
@@ -133,6 +139,11 @@ def parse_chapters_range(chapters, last):
                 CHAPTERS.update(range(get_number(split[0]), get_number(split[1]) + 1))
     except ValueError:
         error(f'Invalid chapters format')
+
+def filename_chapter_range():
+    min_chapter = min(CHAPTERS)
+    max_chapter = max(CHAPTERS)
+    return str(min_chapter) if min_chapter == max_chapter else f'{min_chapter}-{max_chapter}'
 
 def split_rotate_2_pages(rotate):
     return str(1 if rotate else 0)
@@ -235,29 +246,57 @@ if __name__ == "__main__":
     if args.format != 'PNG':
         print_colored(f'Converting to {args.format.upper()}...', Fore.BLUE, Style.BRIGHT)
 
-        # CONVERT TO E-READER FORMAT
-        freeze_support()
-
-        argv = ['--output', MANGA_DIR, '-p', args.profile, '--manga-style', '--hq', '-f', args.format, '--batchsplit', single(args.single), '-u', '-r', split_rotate_2_pages(args.rotate)]
-        
-        if not args.fullsize:
-            argv.append('-s')
-
-        if args.single:
-            min_chapter = min(CHAPTERS)
-            max_chapter = max(CHAPTERS)
-            chapter_range = str(min_chapter) if min_chapter == max_chapter else f'{min_chapter}-{max_chapter}'
-            title = f'{manga_title} {chapter_range}'
-            print_colored(title, Fore.BLUE)
-            argv = argv + ['--title', title, directory] # all chapters in manga directory are packed
-            manga2ebook(argv)
-            os.rename(f'{MANGA_DIR}/{manga}{extension}', f'{MANGA_DIR}/{manga} {chapter_range}{extension}')
-        else:
+        if args.format == 'PDF':
+            import img2pdf
+            chapters_paths = []
             for chapter in CHAPTERS:
-                title = f'{manga_title} {chapter}'
+                chapter_dir = chapter_directory(manga, chapter)
+                chapter_number_paths = sorted(list(files(chapter_dir, 'png')), key=lambda name_path: int(name_path[0]))
+                chapter_paths = map(lambda name_path: name_path[1], chapter_number_paths)
+                if args.single:
+                    chapters_paths.extend(chapter_paths)
+                else:
+                    path = f'{MANGA_DIR}/{manga} {chapter}{extension}'
+                    if not check_exists_file(path):
+                        with open(path, "wb") as f:
+                            f.write(img2pdf.convert(chapter_paths))
+                        print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
+            if args.single:
+                chapter_range = filename_chapter_range()
+                title = f'{manga_title} {chapter_range}'
+                path = f'{MANGA_DIR}/{manga} {chapter_range}{extension}'
+                if not check_exists_file(path):
+                    with open(path, "wb") as f:
+                        f.write(img2pdf.convert(chapters_paths))
+                    print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
+        else:
+            # CONVERT TO E-READER FORMAT
+            from kindlecomicconverter.comic2ebook import main as manga2ebook
+
+            freeze_support()
+
+            argv = ['--output', MANGA_DIR, '-p', args.profile, '--manga-style', '--hq', '-f', args.format, '--batchsplit', single(args.single), '-u', '-r', split_rotate_2_pages(args.rotate)]
+            
+            if not args.fullsize:
+                argv.append('-s')
+
+            if args.single:
+                chapter_range = filename_chapter_range()
+                title = f'{manga_title} {chapter_range}'
                 print_colored(title, Fore.BLUE)
-                argv_chapter = argv + ['--title', title, chapter_directory(manga, chapter)]
-                manga2ebook(argv_chapter)
-                os.rename(f'{MANGA_DIR}/{chapter}{extension}', f'{MANGA_DIR}/{manga} {chapter}{extension}')
+                argv = argv + ['--title', title, directory] # all chapters in manga directory are packed
+                manga2ebook(argv)
+                path = f'{MANGA_DIR}/{manga} {chapter_range}{extension}'
+                os.rename(f'{MANGA_DIR}/{manga}{extension}', path)
+                print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
+            else:
+                for chapter in CHAPTERS:
+                    title = f'{manga_title} {chapter}'
+                    print_colored(title, Fore.BLUE)
+                    argv_chapter = argv + ['--title', title, chapter_directory(manga, chapter)]
+                    manga2ebook(argv_chapter)
+                    path = f'{MANGA_DIR}/{manga} {chapter}{extension}'
+                    os.rename(f'{MANGA_DIR}/{chapter}{extension}', path)
+                    print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
     else:
         print_colored(f'DONE: {os.path.abspath(directory)}', Fore.GREEN, Style.BRIGHT)

@@ -252,7 +252,7 @@ if __name__ == "__main__":
             for chapter in CHAPTERS:
                 chapter_dir = chapter_directory(manga, chapter)
                 chapter_number_paths = sorted(list(files(chapter_dir, 'png')), key=lambda name_path: int(name_path[0]))
-                chapter_paths = map(lambda name_path: name_path[1], chapter_number_paths)
+                chapter_paths = list(map(lambda name_path: name_path[1], chapter_number_paths))
                 if args.single:
                     chapters_paths.extend(chapter_paths)
                 else:

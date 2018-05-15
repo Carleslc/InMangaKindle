@@ -11,6 +11,8 @@
 
 ### 🇪🇸 Uso
 
+**[Tutorial en vídeo](https://www.youtube.com/watch?v=X6l1zvu6mfo)**
+
 `python3.6 manga.py -h`
 
 ```

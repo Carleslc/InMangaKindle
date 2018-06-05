@@ -8,7 +8,7 @@ from sys import stdout
 from requests import get, post
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
-from colorama import Fore, Style
+from colorama import Fore, Style, init
 from multiprocessing import freeze_support
 
 WEBSITE = "https://inmanga.com"
@@ -153,6 +153,9 @@ def single(single):
 
 if __name__ == "__main__":
 
+    # initialize console colors for windows.
+    init()
+    
     # PARSE ARGS
 
     set_args()

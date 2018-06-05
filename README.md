@@ -8,6 +8,23 @@
 - (EPUB/MOBI format) [Kindle Comic Converter](https://github.com/ciromattia/kcc)
 - (MOBI format) [KindleGen](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765211)
 - (Optional) [SendToKindle](https://www.amazon.com/gp/sendtokindle)
+- [requests](http://docs.python-requests.org/) 
+
+```
+pip install requests
+```
+
+- [bs4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) 
+
+```
+pip install bs4
+```
+
+- [colorama](https://pypi.org/project/colorama/) 
+
+```
+pip install colorama
+```
 
 ### 🇪🇸 Uso
 

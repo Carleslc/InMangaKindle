@@ -36,6 +36,7 @@ def set_args():
     parser.add_argument("--profile", help='Device profile (Available options: K1, K2, K34, K578, KDX, KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD, KoAH2O, KoAO) [Default = KPW (Kindle Paperwhite)]', default='KPW')
     parser.add_argument("--format", help='Output format (Available options: PNG, PDF, MOBI, EPUB, CBZ) [Default = MOBI]. If PNG is selected then no conversion to e-reader file will be done', default='MOBI')
     parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
+    parser.add_argument("--cache", action='store_true', help="Do not download episode but get from local directory")
     args = parser.parse_args()
 
 def print_colored(message, *colors):
@@ -151,6 +152,13 @@ def split_rotate_2_pages(rotate):
 def single(single):
     return str(0 if single else 2)
 
+def cache_convert(args):
+    try:
+        manga2ebook(args)
+    except Exception as e:
+        print(e)
+        exit()
+
 if __name__ == "__main__":
 
     # initialize console colors for windows.
@@ -218,30 +226,33 @@ if __name__ == "__main__":
 
     # DOWNLOAD CHAPTERS
     CHAPTERS = sorted(CHAPTERS)
-    downloaded = False
+    if not args.cache:
+        downloaded = False
 
-    for chapter in CHAPTERS:
-        uuid = chapters.get(chapter)
-        if uuid is None:
-            print_colored(f'{manga_title} {chapter} not found', Fore.RED)
-        else:
-            print_colored(f'Downloading {manga_title} {chapter}', Fore.YELLOW, Style.BRIGHT)
+        for chapter in CHAPTERS:
+            uuid = chapters.get(chapter)
+            if uuid is None:
+                print_colored(f'{manga_title} {chapter} not found', Fore.RED)
+            else:
+                print_colored(f'Downloading {manga_title} {chapter}', Fore.YELLOW, Style.BRIGHT)
 
-            url = f"{MANGA_WEBSITE}/{manga}/{chapter}/{uuid}"
-            chapter_dir = chapter_directory(manga, chapter)
-            page = get(url)
-            if success(page, print_ok=False):
-                html = BeautifulSoup(page.content, 'html.parser')
-                pages = html.find(id='PageList').find_all(True, recursive=False)
-                for page in pages:
-                    page_id = page.get('value')
-                    page_number = int(page.get_text())
-                    url = IMAGE_WEBSITE + page_id
-                    download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)')
-                downloaded = True
+                url = f"{MANGA_WEBSITE}/{manga}/{chapter}/{uuid}"
+                print(url)
+                chapter_dir = chapter_directory(manga, chapter)
+                page = get(url)
+                if success(page, print_ok=False):
+                    html = BeautifulSoup(page.content, 'html.parser')
+                    print(html)
+                    pages = html.find(id='PageList').find_all(True, recursive=False)
+                    for page in pages:
+                        page_id = page.get('value')
+                        page_number = int(page.get_text())
+                        url = IMAGE_WEBSITE + page_id
+                        download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)')
+                    downloaded = True
 
-    if not downloaded:
-        error("No chapters found")
+        if not downloaded:
+            error("No chapters found")
 
     extension = f'.{args.format.lower()}'
     directory = manga_directory(manga)
@@ -288,7 +299,7 @@ if __name__ == "__main__":
                 title = f'{manga_title} {chapter_range}'
                 print_colored(title, Fore.BLUE)
                 argv = argv + ['--title', title, directory] # all chapters in manga directory are packed
-                manga2ebook(argv)
+                cache_convert(argv)
                 path = f'{MANGA_DIR}/{manga} {chapter_range}{extension}'
                 os.rename(f'{MANGA_DIR}/{manga}{extension}', path)
                 print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
@@ -297,7 +308,7 @@ if __name__ == "__main__":
                     title = f'{manga_title} {chapter}'
                     print_colored(title, Fore.BLUE)
                     argv_chapter = argv + ['--title', title, chapter_directory(manga, chapter)]
-                    manga2ebook(argv_chapter)
+                    cache_convert(argv_chapter)
                     path = f'{MANGA_DIR}/{manga} {chapter}{extension}'
                     os.rename(f'{MANGA_DIR}/{chapter}{extension}', path)
                     print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)

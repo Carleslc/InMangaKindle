@@ -14,6 +14,7 @@ from multiprocessing import freeze_support
 WEBSITE = "https://inmanga.com"
 IMAGE_WEBSITE = f"{WEBSITE}/page/getPageImage/?identification="
 CHAPTERS_WEBSITE = f"{WEBSITE}/chapter/getall?mangaIdentification="
+CHAPTER_PAGES_WEBSITE = f"{WEBSITE}/chapter/chapterIndexControls?identification="
 MANGA_WEBSITE = f"{WEBSITE}/ver/manga"
 
 SEARCH_URL = "https://inmanga.com/manga/getMangasConsultResult"
@@ -236,13 +237,15 @@ if __name__ == "__main__":
             else:
                 print_colored(f'Downloading {manga_title} {chapter}', Fore.YELLOW, Style.BRIGHT)
 
-                url = f"{MANGA_WEBSITE}/{manga}/{chapter}/{uuid}"
-                print(url)
+                #url = f"{MANGA_WEBSITE}/{manga}/{chapter}/{uuid}"
+                url = CHAPTER_PAGES_WEBSITE + uuid
+                
                 chapter_dir = chapter_directory(manga, chapter)
-                page = get(url)
+                page = get(url, headers={ 'User-Agent': 'Mozilla/5.0' })
                 if success(page, print_ok=False):
                     html = BeautifulSoup(page.content, 'html.parser')
-                    print(html)
+                    with open('output.html', 'wb') as f:
+                        f.write(page.content)
                     pages = html.find(id='PageList').find_all(True, recursive=False)
                     for page in pages:
                         page_id = page.get('value')

@@ -258,8 +258,10 @@ if __name__ == "__main__":
     extension = f'.{args.format.lower()}'
     directory = manga_directory(manga)
 
+    args.format = args.format.upper()
+
     if args.format != 'PNG':
-        print_colored(f'Converting to {args.format.upper()}...', Fore.BLUE, Style.BRIGHT)
+        print_colored(f'Converting to {args.format}...', Fore.BLUE, Style.BRIGHT)
 
         if args.format == 'PDF':
             import img2pdf

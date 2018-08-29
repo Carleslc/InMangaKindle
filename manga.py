@@ -239,13 +239,11 @@ if __name__ == "__main__":
 
                 #url = f"{MANGA_WEBSITE}/{manga}/{chapter}/{uuid}"
                 url = CHAPTER_PAGES_WEBSITE + uuid
-                
+
                 chapter_dir = chapter_directory(manga, chapter)
-                page = get(url, headers={ 'User-Agent': 'Mozilla/5.0' })
+                page = get(url)
                 if success(page, print_ok=False):
                     html = BeautifulSoup(page.content, 'html.parser')
-                    with open('output.html', 'wb') as f:
-                        f.write(page.content)
                     pages = html.find(id='PageList').find_all(True, recursive=False)
                     for page in pages:
                         page_id = page.get('value')

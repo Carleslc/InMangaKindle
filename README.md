@@ -64,6 +64,7 @@ optional arguments:
                         CBZ) [Por defecto = MOBI]. Si se selecciona PNG entonces no
                         se hará ninguna conversión.
   --fullsize            con este parámetro no se ajustará el tamaño de las imágenes al perfil del dispositivo
+  --cache               Utiliza las imágenes en local sin descargar ningún episodio
 ```
 
 ### 🇪🇸 Ejemplos
@@ -116,6 +117,7 @@ optional arguments:
                         conversion to e-reader file will be done
   --fullsize            Do not stretch images to the profile's device
                         resolution
+  --cache               Do not download episode but get from local directory
 ```
 
 ### 🇬🇧 Examples

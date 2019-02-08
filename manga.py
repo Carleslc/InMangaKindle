@@ -4,7 +4,6 @@
 import os
 import json
 import argparse
-from sys import stdout
 from requests import get, post
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus

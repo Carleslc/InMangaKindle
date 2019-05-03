@@ -4,7 +4,7 @@
 ### Dependencias
 #### Dependencies
 
-- [Python 3.6](https://www.python.org/downloads/)
+- [Python 3.6+](https://www.python.org/downloads/)
 - (EPUB/MOBI format) [Kindle Comic Converter](https://github.com/ciromattia/kcc)
 - (MOBI format) [KindleGen](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765211)
 - (Optional) [SendToKindle](https://www.amazon.com/gp/sendtokindle)
@@ -30,7 +30,7 @@ pip install colorama
 
 **[Tutorial en vídeo](https://www.youtube.com/watch?v=X6l1zvu6mfo)**
 
-`python3.6 manga.py -h`
+`python3 manga.py -h`
 
 ```
 uso: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY] [--single]
@@ -71,17 +71,17 @@ optional arguments:
 
 La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Utiliza la opción --profile para canviar el perfil a tu dispositivo.
 
-- `python manga.py "one piece" --chapters 880..last --single` descargará los capítulos desde el 880 hasta el último disponible del manga _One Piece_ y los empaquetará en un único archivo MOBI
+- `python3 manga.py "one piece" --chapters 880..last --single` descargará los capítulos desde el 880 hasta el último disponible del manga _One Piece_ y los empaquetará en un único archivo MOBI
 
-- `python manga.py "one piece" --chapters 880..last --format PDF --single` hace lo mismo que el ejemplo anterior pero en formato PDF para leer en el ordenador
+- `python3 manga.py "one piece" --chapters 880..last --format PDF --single` hace lo mismo que el ejemplo anterior pero en formato PDF para leer en el ordenador
 
-- `python manga.py "shingeki no kyojin" --chapter last --format EPUB` descargará el último capítulo de _Shingeki no Kyojin_ como EPUB
+- `python3 manga.py "shingeki no kyojin" --chapter last --format EPUB` descargará el último capítulo de _Shingeki no Kyojin_ como EPUB
 
-- `python manga.py "dragon ball" --chapters "1, 2, 8..11"` descargará los capítulos 1, 2, 8, 9, 10, 11 de _Dragon Ball_ en diferentes archivos MOBI
+- `python3 manga.py "dragon ball" --chapters "1, 2, 8..11"` descargará los capítulos 1, 2, 8, 9, 10, 11 de _Dragon Ball_ en diferentes archivos MOBI
 
 ### 🇬🇧 Usage
 
-`python3.6 manga.py -h`
+`python3 manga.py -h`
 
 ```
 usage: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY] [--single]
@@ -124,13 +124,13 @@ optional arguments:
 
 Default screen resolution is for Kindle Paperwhite device profile. Use option --profile to change the profile to your device.
 
-- `python manga.py "one piece" --chapters 880..last --single` will download _One Piece_ chapters from 880 to the last chapter available and pack them into one single MOBI file
+- `python3 manga.py "one piece" --chapters 880..last --single` will download _One Piece_ chapters from 880 to the last chapter available and pack them into one single MOBI file
 
-- `python manga.py "one piece" --chapters 880..last --format PDF --single` will result in the same as above but in PDF instead MOBI
+- `python3 manga.py "one piece" --chapters 880..last --format PDF --single` will result in the same as above but in PDF instead MOBI
 
-- `python manga.py "shingeki no kyojin" --chapter last --format EPUB` will download the last chapter of _Shingeki no Kyojin_ as EPUB
+- `python3 manga.py "shingeki no kyojin" --chapter last --format EPUB` will download the last chapter of _Shingeki no Kyojin_ as EPUB
 
-- `python manga.py "dragon ball" --chapters "1, 2, 8..11"` will download chapters 1, 2, 8, 9, 10, 11 of _Dragon Ball_ as different MOBI files
+- `python3 manga.py "dragon ball" --chapters "1, 2, 8..11"` will download chapters 1, 2, 8, 9, 10, 11 of _Dragon Ball_ as different MOBI files
 
 ### Funcionalidades en desarrollo
 #### Features in development

@@ -26,9 +26,14 @@ pip install bs4
 pip install colorama
 ```
 
+A veces el comando de dependencias para Python3 es `pip3` en vez de `pip`.
+Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
+
 ### 🇪🇸 Uso
 
 **[Tutorial en vídeo](https://www.youtube.com/watch?v=X6l1zvu6mfo)**
+
+A veces el comando `python3` es simplemente `python`. Comprueba que la versión sea superior a 3.6 con `python --version` o `python3 -- version`.
 
 `python3 manga.py -h`
 
@@ -80,6 +85,8 @@ La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Ut
 - `python3 manga.py "dragon ball" --chapters "1, 2, 8..11"` descargará los capítulos 1, 2, 8, 9, 10, 11 de _Dragon Ball_ en diferentes archivos MOBI
 
 ### 🇬🇧 Usage
+
+Sometimes `python3` command is just `python`. Check that your version is greater than 3.6 with `python --version` or `python3 -- version`.
 
 `python3 manga.py -h`
 

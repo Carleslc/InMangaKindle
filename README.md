@@ -5,30 +5,28 @@
 #### Dependencies
 
 - [Python 3.6+](https://www.python.org/downloads/)
-- (EPUB/MOBI format) [Kindle Comic Converter](https://github.com/ciromattia/kcc)
 - (MOBI format) [KindleGen](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765211)
 - (Optional) [SendToKindle](https://www.amazon.com/gp/sendtokindle)
-- [requests](http://docs.python-requests.org/) 
 
-```
-pip install requests
-```
+##### Python dependencies
 
-- [bs4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) 
+🇪🇸 Ejecuta el siguiente comando. A veces el comando de dependencias para Python3 es `pip3` en vez de `pip`.
 
-```
-pip install bs4
-```
+🇬🇧 Run the following command. Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
 
-- [colorama](https://pypi.org/project/colorama/) 
-
-```
-pip install colorama
+```shell
+pip install --user -r dependencies.txt
 ```
 
-A veces el comando de dependencias para Python3 es `pip3` en vez de `pip`.
+*Instalará / Will install:*
 
-Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
+* (EPUB/MOBI format) [Kindle Comic Converter](https://github.com/ciromattia/kcc)
+
+- [requests](http://docs.python-requests.org/)
+
+- [bs4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
+
+- [colorama](https://pypi.org/project/colorama/)
 
 ### 🇪🇸 Uso
 

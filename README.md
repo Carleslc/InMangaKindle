@@ -27,6 +27,7 @@ pip install colorama
 ```
 
 A veces el comando de dependencias para Python3 es `pip3` en vez de `pip`.
+
 Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
 
 ### 🇪🇸 Uso

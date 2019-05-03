@@ -34,7 +34,7 @@ Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
 
 **[Tutorial en vídeo](https://www.youtube.com/watch?v=X6l1zvu6mfo)**
 
-A veces el comando `python3` es simplemente `python`. Comprueba que la versión sea superior a 3.6 con `python --version` o `python3 -- version`.
+A veces el comando `python3` es simplemente `python`. Comprueba que la versión sea superior a 3.6 con `python --version` o `python3 --version`.
 
 `python3 manga.py -h`
 
@@ -87,7 +87,7 @@ La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Ut
 
 ### 🇬🇧 Usage
 
-Sometimes `python3` command is just `python`. Check that your version is greater than 3.6 with `python --version` or `python3 -- version`.
+Sometimes `python3` command is just `python`. Check that your version is greater than 3.6 with `python --version` or `python3 --version`.
 
 `python3 manga.py -h`
 

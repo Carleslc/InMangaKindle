@@ -1,7 +1,7 @@
 # Manga en Español para Kindle / Ebook
 ## Spanish Manga for Kindle / Ebook
 
-[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/C0C2VFGD)
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/carleslc)
 
 ### Dependencias
 #### Dependencies

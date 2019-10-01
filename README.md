@@ -22,13 +22,15 @@ pip install --user -r dependencies.txt
 
 *Instalará / Will install:*
 
-* (EPUB/MOBI format) [Kindle Comic Converter](https://github.com/ciromattia/kcc)
+- (EPUB/MOBI format) [Kindle Comic Converter](https://github.com/ciromattia/kcc)
 
 - [requests](http://docs.python-requests.org/)
 
 - [bs4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
 
 - [colorama](https://pypi.org/project/colorama/)
+
+- [img2pdf](https://pypi.org/project/img2pdf/)
 
 ### 🇪🇸 Uso
 

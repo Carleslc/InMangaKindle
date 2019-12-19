@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -17,7 +17,6 @@ CHAPTER_PAGES_WEBSITE = f"{WEBSITE}/chapter/chapterIndexControls?identification=
 MANGA_WEBSITE = f"{WEBSITE}/ver/manga"
 
 SEARCH_URL = "https://inmanga.com/manga/getMangasConsultResult"
-SEARCH_QUERY = "filter%5Bgeneres%5D%5B%5D=-1&filter%5BqueryString%5D=MANGA&filter%5Bskip%5D=0&filter%5Btake%5D=10&filter%5Bsortby%5D=5"
 
 MANGA_DIR = './manga'
 
@@ -184,10 +183,32 @@ if __name__ == "__main__":
     print_colored(f'Searching {MANGA}...', Style.BRIGHT)
 
     # Alternative Search: https://inmanga.com/OnMangaQuickSearch/Source/QSMangaList.json
-    search = post(SEARCH_URL, data=SEARCH_QUERY.replace('MANGA', quote_plus(MANGA)), headers={'Content-Type': 'application/x-www-form-urlencoded'})
+
+    data = {
+        'hfilter[generes][]': '-1',
+        'filter[queryString]': MANGA,
+        'filter[skip]': '0',
+        'filter[take]': '10',
+        'filter[sortby]': '1',
+        'filter[broadcastStatus]': '0',
+        'filter[onlyFavorites]': 'false'
+    }
+
+    headers = {
+        'Origin': 'https://inmanga.com',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-US,en;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Accept': '*/*',
+        'Referer': 'https://inmanga.com/manga/consult?suggestion=' + MANGA,
+        'X-Requested-With': 'XMLHttpRequest'
+    }
+
+    search = post(SEARCH_URL, data=data, headers=headers)
     exit_if_fails(search)
 
-    search_href = BeautifulSoup(search.content, 'html.parser').find_all(True, recursive=False)
+    search_href = BeautifulSoup(search.content, 'html.parser').find_all("a", href=True, recursive=False)
 
     results = []
     match = False

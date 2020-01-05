@@ -50,6 +50,9 @@ def error(message):
     print_colored(message, Fore.RED, Style.BRIGHT)
     exit()
 
+def not_found():
+    error(f"Manga '{MANGA}' not found")
+
 def print_dim(s, *colors):
     print_colored(s, Style.DIM, *colors)
 
@@ -215,7 +218,7 @@ if __name__ == "__main__":
     for result in search_href:
         manga_href = result.get('href')
         if manga_href is None:
-            error(f"Manga '{MANGA}' not found")
+            not_found()
         manga = manga_href.split('/')[-2] # encoded title
         uuid = manga_href.split('/')[-1]
         manga_title = result.find('h4').get_text().strip() # may contain special characters
@@ -227,6 +230,8 @@ if __name__ == "__main__":
     if not match and len(search_href) > 1:
         upper_titles = [title.upper() for title in results]
         error('There are several results, please select one of these:\n' + '\n'.join(upper_titles))
+    elif len(results) == 0:
+        not_found()
 
     # RETRIEVE CHAPTERS
 

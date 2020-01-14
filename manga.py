@@ -227,11 +227,12 @@ if __name__ == "__main__":
             break
         results.append(manga_title)
 
-    if not match and len(search_href) > 1:
-        upper_titles = [title.upper() for title in results]
-        error('There are several results, please select one of these:\n' + '\n'.join(upper_titles))
-    elif len(results) == 0:
-        not_found()
+    if not match:
+        if len(search_href) > 1:
+            upper_titles = [title.upper() for title in results]
+            error('There are several results, please select one of these:\n' + '\n'.join(upper_titles))
+        else:
+            not_found()
 
     # RETRIEVE CHAPTERS
 
@@ -262,7 +263,6 @@ if __name__ == "__main__":
             else:
                 print_colored(f'Downloading {manga_title} {chapter}', Fore.YELLOW, Style.BRIGHT)
 
-                #url = f"{MANGA_WEBSITE}/{manga}/{chapter}/{uuid}"
                 url = CHAPTER_PAGES_WEBSITE + uuid
 
                 chapter_dir = chapter_directory(manga, chapter)

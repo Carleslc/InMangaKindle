@@ -7,8 +7,6 @@
 #### Dependencies
 
 - [Python 3.6+](https://www.python.org/downloads/)
-- (MOBI format) [KindleGen](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765211)
-- (Optional) [SendToKindle](https://www.amazon.com/gp/sendtokindle)
 
 ##### Python dependencies
 
@@ -23,14 +21,20 @@ pip install --user -r dependencies.txt
 *Instalará / Will install:*
 
 - (EPUB/MOBI format) [Kindle Comic Converter](https://github.com/ciromattia/kcc)
-
 - [requests](http://docs.python-requests.org/)
-
 - [bs4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
-
 - [colorama](https://pypi.org/project/colorama/)
-
 - [img2pdf](https://pypi.org/project/img2pdf/)
+
+#### MOBI / Kindle
+
+Para convertir un manga al formato MOBI (Kindle) necesitarás la dependencia [KindleGen](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765211).
+
+En las últimas versiones de Mac OS X es posible que la anterior versión no funcione, así que necesitarás instalar [Kindle Previewer 3](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1003018611) y añadir el ejecutable `kindlegen` situado en `/Applications/Kindle Previewer 3.app/Contents/MacOS/lib/fc/bin/kindlegen` a tu PATH, utilizado por el Kindle Comic Converter.
+
+Por ejemplo, ejecutando el siguiente comando después de instalarlo: `cp /Applications/Kindle\ Previewer\ 3.app/Contents/MacOS/lib/fc/bin/kindlegen /usr/local/bin/kindlegen`
+
+Puedes enviar tus capítulos directamente al Kindle con la aplicación [SendToKindle](https://www.amazon.com/gp/sendtokindle).
 
 ### 🇪🇸 Uso
 

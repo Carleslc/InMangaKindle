@@ -344,6 +344,8 @@ if __name__ == "__main__":
 
   if args.cache:
     all_chapters = [int(chapter[0]) for chapter in folders(directory)]
+    if args.chapters == 'last':
+      print_colored(f'Last downloaded chapter: {max(all_chapters)}', Fore.YELLOW, Style.BRIGHT);
   else:
     chapters_json = get(CHAPTERS_WEBSITE + uuid)
     exit_if_fails(chapters_json)

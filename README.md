@@ -44,7 +44,7 @@ En las últimas versiones de Mac OS X es posible que la anterior versión no fun
 
 Puedes enviar tus capítulos directamente al Kindle con la aplicación [SendToKindle](https://www.amazon.com/gp/sendtokindle).
 
-#### PDF
+#### PDF
 
 En la conversión a PDF algunas imágenes pueden dar el error `Exception: Refusing to work on images with alpha channel`. Para corregir esto se debe eliminar la transparencia de estas imágenes. Puedes añadir la opción `--remove-alpha` para hacerlo automáticamente. Para que funcione debes instalar [Wand + ImageMagick](http://docs.wand-py.org/en/0.5.9/guide/install.html).
 

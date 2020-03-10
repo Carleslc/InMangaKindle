@@ -136,7 +136,8 @@ def check_exists_file(path):
 
 def check_exists_dir(path):
   if not os.path.isdir(path):
-    error(f'{path} is not downloaded, please download that chapter first.');
+    tip = ' Try again this command without --cache' if args.cache else ''
+    error(f'{path} is not downloaded, please download that chapter first.{tip}');
 
 def files(dir, extension=''):
   def filename(file):
@@ -221,20 +222,20 @@ def convert_to_pdf(path, chapters_paths):
 
 def fix_corrupted_file(corrupted_file, corrupted_file_path, argv):
   print_colored(f'{corrupted_file} is corrupted, removing and trying again... (Cancel with Ctrl+C)', Fore.RED)
-  local_corrupted_file_path = f'{directory}/{corrupted_file}'
+  local_corrupted_file_path = os.path.abspath(f'{directory}/{corrupted_file}')
+  print_dim(local_corrupted_file_path)
   os.remove(local_corrupted_file_path)
   if corrupted_file_path != local_corrupted_file_path:
     os.remove(corrupted_file_path)
-  print_dim(local_corrupted_file_path)
   cache_convert(argv)
 
 def convert_except(e, argv):
   message = str(e)
   corrupted_file_path = re.findall(r'Image file (.*?) is corrupted', message)
   if len(corrupted_file_path) > 0:
-    parts = message.split('/')
-    corrupted_file = f'{parts[-2]}/{parts[-1][:-1]}'
-    fix_corrupted_file(corrupted_file, corrupted_file_path[0], argv)
+    parts = corrupted_file_path[0].split('/')
+    corrupted_file = f'{parts[-2]}/{parts[-1]}'
+    fix_corrupted_file(corrupted_file, os.path.abspath(corrupted_file_path[0]), argv)
   else:
     import traceback
     traceback.print_tb(e.__traceback__)
@@ -245,6 +246,34 @@ def cache_convert(argv):
     manga2ebook(argv)
   except Exception as e:
     convert_except(e, argv)
+
+def online_search():
+  data = {
+    'hfilter[generes][]': '-1',
+    'filter[queryString]': MANGA,
+    'filter[skip]': '0',
+    'filter[take]': '10',
+    'filter[sortby]': '1',
+    'filter[broadcastStatus]': '0',
+    'filter[onlyFavorites]': 'false'
+  }
+
+  headers = {
+    'Origin': 'https://inmanga.com',
+    'Accept-Encoding': 'gzip, deflate',
+    'Accept-Language': 'en-US,en;q=0.8',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    'Accept': '*/*',
+    'Referer': 'https://inmanga.com/manga/consult?suggestion=' + MANGA,
+    'X-Requested-With': 'XMLHttpRequest'
+  }
+
+  # Alternative Search: https://inmanga.com/OnMangaQuickSearch/Source/QSMangaList.json
+  search = post(SEARCH_URL, data=data, headers=headers)
+  exit_if_fails(search)
+
+  return BeautifulSoup(search.content, 'html.parser').find_all("a", href=True, recursive=False)
 
 if __name__ == "__main__":
 
@@ -269,34 +298,6 @@ if __name__ == "__main__":
   search_type = f'in {MANGA_DIR}' if args.cache else 'online'
   print_colored(f"Searching '{MANGA}' {search_type}...", Style.BRIGHT)
 
-  # Alternative Search: https://inmanga.com/OnMangaQuickSearch/Source/QSMangaList.json
-
-  data = {
-    'hfilter[generes][]': '-1',
-    'filter[queryString]': MANGA,
-    'filter[skip]': '0',
-    'filter[take]': '10',
-    'filter[sortby]': '1',
-    'filter[broadcastStatus]': '0',
-    'filter[onlyFavorites]': 'false'
-  }
-
-  headers = {
-    'Origin': 'https://inmanga.com',
-    'Accept-Encoding': 'gzip, deflate',
-    'Accept-Language': 'en-US,en;q=0.8',
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36',
-    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    'Accept': '*/*',
-    'Referer': 'https://inmanga.com/manga/consult?suggestion=' + MANGA,
-    'X-Requested-With': 'XMLHttpRequest'
-  }
-
-  search = post(SEARCH_URL, data=data, headers=headers)
-  exit_if_fails(search)
-
-  search_href = BeautifulSoup(search.content, 'html.parser').find_all("a", href=True, recursive=False)
-
   results = []
   match = False
   if args.cache: # offline search
@@ -312,7 +313,7 @@ if __name__ == "__main__":
         results.append(manga_title)
         submatch_manga = manga
   else: # online search
-    for result in search_href:
+    for result in online_search():
       manga_href = result.get('href')
       if manga_href is None:
         not_found()

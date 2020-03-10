@@ -26,6 +26,16 @@ pip install --user -r dependencies.txt
 - [colorama](https://pypi.org/project/colorama/)
 - [img2pdf](https://pypi.org/project/img2pdf/)
 
+(*Opcional*) Puedes usar `virtualenv` para evitar conflictos con otras versiones de Python:
+
+```bash
+sudo pip install virtualenv
+virtualenv env
+. env/bin/activate # Bash/Tcsh console
+#. env/bin/activate.fish # Fish console
+pip install -r dependencies.txt
+```
+
 #### MOBI / Kindle
 
 Para convertir un manga al formato MOBI (Kindle) necesitarás la dependencia [KindleGen](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765211).
@@ -33,6 +43,10 @@ Para convertir un manga al formato MOBI (Kindle) necesitarás la dependencia [Ki
 En las últimas versiones de Mac OS X es posible que la anterior versión no funcione, así que necesitarás instalar [Kindle Previewer 3](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1003018611) y añadir el ejecutable `kindlegen` a tu PATH ejecutando el siguiente comando después de instalarlo: `cp /Applications/Kindle\ Previewer\ 3.app/Contents/MacOS/lib/fc/bin/kindlegen /usr/local/bin/kindlegen`
 
 Puedes enviar tus capítulos directamente al Kindle con la aplicación [SendToKindle](https://www.amazon.com/gp/sendtokindle).
+
+#### PDF
+
+En la conversión a PDF algunas imágenes pueden dar el error `Exception: Refusing to work on images with alpha channel`. Para corregir esto se debe eliminar la transparencia de estas imágenes. Puedes añadir la opción `--remove-alpha` para hacerlo automáticamente. Para que funcione debes instalar [Wand + ImageMagick](http://docs.wand-py.org/en/0.5.9/guide/install.html).
 
 ### 🇪🇸 Uso
 
@@ -45,6 +59,7 @@ A veces el comando `python3` es simplemente `python`. Comprueba que la versión 
 ```
 uso: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY] [--single]
                 [--rotate] [--profile PROFILE] [--format FORMAT] [--fullsize]
+                [--cache] [--remove-alpha]
                 manga
 
 parámetros posicionales:
@@ -63,7 +78,7 @@ optional arguments:
                         se descargarán todos los capítulos disponibles.
   --directory DIRECTORY
                         directorio/carpeta para guardar las descargas. Por defecto: ./manga
-  --single              empaqueta los archivos en un único archivo. Si este parámetro no se proporciona
+  --single              empaqueta los capítulos en un único archivo. Si este parámetro no se proporciona
                         cada capítulo se creará en un fichero independiente.
   --rotate              rota las dobles páginas. Si este parámetro no se proporciona
                         las dobles páginas se dividirán en dos páginas separadas.
@@ -74,7 +89,8 @@ optional arguments:
                         CBZ) [Por defecto = MOBI]. Si se selecciona PNG entonces no
                         se hará ninguna conversión.
   --fullsize            con este parámetro no se ajustará el tamaño de las imágenes al perfil del dispositivo
-  --cache               Utiliza las imágenes en local sin descargar ningún episodio
+  --cache               Utiliza las imágenes en local sin descargar ningún capítulo (modo sin conexión)
+  --remove-alpha        Elimina el canal alpha de las imagenes en la conversión a PDF usando ImageMagick
 ```
 
 ### 🇪🇸 Ejemplos
@@ -82,12 +98,10 @@ optional arguments:
 La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Utiliza la opción --profile para canviar el perfil a tu dispositivo.
 
 - `python3 manga.py "one piece" --chapters 880..last --single` descargará los capítulos desde el 880 hasta el último disponible del manga _One Piece_ y los empaquetará en un único archivo MOBI
-
 - `python3 manga.py "one piece" --chapters 880..last --format PDF --single` hace lo mismo que el ejemplo anterior pero en formato PDF para leer en el ordenador
-
 - `python3 manga.py "shingeki no kyojin" --chapter last --format EPUB` descargará el último capítulo de _Shingeki no Kyojin_ como EPUB
-
 - `python3 manga.py "dragon ball" --chapters "1, 2, 8..11"` descargará los capítulos 1, 2, 8, 9, 10, 11 de _Dragon Ball_ en diferentes archivos MOBI
+- `python3 manga.py "one piece" --chapters 900..910 --single --rotate --cache` utilizará los capítulos descargados previamente para crear un archivo MOBI con los capítulos del 900 al 910 de *One Piece*. También girará las páginas dobles para verlas en horizontal en lugar de dos páginas diferentes.
 
 ### 🇬🇧 Usage
 
@@ -98,6 +112,7 @@ Sometimes `python3` command is just `python`. Check that your version is greater
 ```
 usage: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY] [--single]
                 [--rotate] [--profile PROFILE] [--format FORMAT] [--fullsize]
+                [--cache] [--remove-alpha]
                 manga
 
 positional arguments:
@@ -116,20 +131,23 @@ optional arguments:
                         chapters will be downloaded.
   --directory DIRECTORY
                         directory to save downloads. Default: ./manga
-  --single              pack all chapters in only one e-reader file. If this
-                        argument is not provided every chapter will be in a
-                        separated file
+  --single              merge all chapters in only one file. If this argument
+                        is not provided every chapter will be in a different
+                        file
   --rotate              rotate double pages. If this argument is not provided
                         double pages will be splitted in 2 different pages
   --profile PROFILE     Device profile (Available options: K1, K2, K34, K578,
                         KDX, KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD,
                         KoAH2O, KoAO) [Default = KPW (Kindle Paperwhite)]
-  --format FORMAT       Output format (Available options: PNG, PDF, MOBI, EPUB,
-                        CBZ) [Default = MOBI]. If PNG is selected then no
-                        conversion to e-reader file will be done
+  --format FORMAT       Output format (Available options: PNG, PDF, MOBI,
+                        EPUB, CBZ) [Default = MOBI]. If PNG is selected then
+                        no conversion to e-reader file will be done
   --fullsize            Do not stretch images to the profile's device
                         resolution
-  --cache               Do not download episode but get from local directory
+  --cache               Avoid downloading chapters and use already downloaded
+                        chapters instead (offline)
+  --remove-alpha        When converting to PDF remove alpha channel on images
+                        using ImageMagick Wand
 ```
 
 ### 🇬🇧 Examples
@@ -137,13 +155,7 @@ optional arguments:
 Default screen resolution is for Kindle Paperwhite device profile. Use option --profile to change the profile to your device.
 
 - `python3 manga.py "one piece" --chapters 880..last --single` will download _One Piece_ chapters from 880 to the last chapter available and pack them into one single MOBI file
-
 - `python3 manga.py "one piece" --chapters 880..last --format PDF --single` will result in the same as above but in PDF instead MOBI
-
 - `python3 manga.py "shingeki no kyojin" --chapter last --format EPUB` will download the last chapter of _Shingeki no Kyojin_ as EPUB
-
 - `python3 manga.py "dragon ball" --chapters "1, 2, 8..11"` will download chapters 1, 2, 8, 9, 10, 11 of _Dragon Ball_ as different MOBI files
-
-### Funcionalidades en desarrollo
-#### Features in development
-_- Additional chapter placeholder "lastDownloaded..last"_
+- `python3 manga.py "one piece" --chapters 900..910 --single --rotate --cache` will reuse chapters previously downloaded to create a new MOBI file with *One Piece* chapters from 900 to 910. Double pages will be rotated to read horizontally instead of two splitted pages.

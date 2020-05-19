@@ -95,7 +95,7 @@ optional arguments:
 
 ### 🇪🇸 Ejemplos
 
-La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Utiliza la opción --profile para canviar el perfil a tu dispositivo.
+La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Utiliza la opción --profile para cambiar el perfil a tu dispositivo.
 
 - `python3 manga.py "one piece" --chapters 880..last --single` descargará los capítulos desde el 880 hasta el último disponible del manga _One Piece_ y los empaquetará en un único archivo MOBI
 - `python3 manga.py "one piece" --chapters 880..last --format PDF --single` hace lo mismo que el ejemplo anterior pero en formato PDF para leer en el ordenador

@@ -8,15 +8,25 @@
 
 - [Python 3.6+](https://www.python.org/downloads/)
 
-##### Python dependencies
+🇪🇸  *Las dependencias de Python se instalarán automáticamente la primera vez que ejecutes el programa.*
 
-🇪🇸 Ejecuta el siguiente comando. A veces el comando de dependencias para Python3 es `pip3` en vez de `pip`.
-
-🇬🇧 Run the following command. Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
+También puedes instalarlas manualmente con el siguiente comando:
 
 ```shell
 pip install --user -r dependencies.txt
 ```
+
+A veces el comando para Python3 es `pip3` en lugar de `pip`.
+
+🇬🇧  *Python dependencies will be installed automatically the first time you run the program.*
+
+Dependencies can also be installed manually with the following command:
+
+```shell
+pip install --user -r dependencies.txt
+```
+
+Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
 
 *Instalará / Will install:*
 
@@ -26,19 +36,9 @@ pip install --user -r dependencies.txt
 - [colorama](https://pypi.org/project/colorama/)
 - [img2pdf](https://pypi.org/project/img2pdf/)
 
-(*Opcional*) Puedes usar `virtualenv` para evitar conflictos con otras versiones de Python:
-
-```bash
-sudo pip install virtualenv
-virtualenv env
-. env/bin/activate # Bash/Tcsh console
-#. env/bin/activate.fish # Fish console
-pip install -r dependencies.txt
-```
-
 #### MOBI / Kindle
 
-Para convertir un manga al formato MOBI (Kindle) necesitarás la dependencia [KindleGen](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765211).
+Para convertir un manga al formato MOBI (Kindle) necesitarás instalar [KindleGen](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765211).
 
 En las últimas versiones de Mac OS X es posible que la anterior versión no funcione, así que necesitarás instalar [Kindle Previewer 3](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1003018611) y añadir el ejecutable `kindlegen` a tu PATH ejecutando el siguiente comando después de instalarlo: `cp /Applications/Kindle\ Previewer\ 3.app/Contents/MacOS/lib/fc/bin/kindlegen /usr/local/bin/kindlegen`
 
@@ -46,7 +46,7 @@ Puedes enviar tus capítulos directamente al Kindle con la aplicación [SendToKi
 
 #### PDF
 
-En la conversión a PDF algunas imágenes pueden dar el error `Exception: Refusing to work on images with alpha channel`. Para corregir esto se debe eliminar la transparencia de estas imágenes. Puedes añadir la opción `--remove-alpha` para hacerlo automáticamente. Para que funcione debes instalar [Wand + ImageMagick](http://docs.wand-py.org/en/0.5.9/guide/install.html).
+En la conversión a PDF algunas imágenes pueden dar el error `Exception: Refusing to work on images with alpha channel`. Para corregir esto se debe eliminar la transparencia de estas imágenes. Puedes añadir la opción `--remove-alpha` para hacerlo automáticamente. Para que funcione debes instalar [Wand + ImageMagick](http://docs.wand-py.org/en/0.6.1/guide/install.html).
 
 ### 🇪🇸 Uso
 
@@ -65,7 +65,7 @@ uso: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY] [--single]
 parámetros posicionales:
   manga                 título del manga a descargar
 
-optional arguments:
+parámetros opcionales:
   -h, --help            muestra este mensaje de ayuda (en inglés)
   --chapters CHAPTERS, --chapter CHAPTERS
                         capítulos a descargar. Formato: primero..último o capítulos

@@ -7,11 +7,30 @@ import json
 import signal
 import argparse
 import tempfile
+from urllib.parse import quote_plus
+from multiprocessing import freeze_support
+
+def install_dependencies(dependencies_file):
+  # Check dependencies
+  import subprocess
+  import sys
+  from pathlib import Path
+  import pkg_resources
+  dependencies_path = Path(__file__).with_name(dependencies_file)
+  dependencies = pkg_resources.parse_requirements(dependencies_path.open())
+  try:
+    for dependency in dependencies:
+      dependency = str(dependency)
+      pkg_resources.require(dependency)
+  except pkg_resources.DistributionNotFound as e:
+    print("Some dependencies are missing, installing...")
+    # Install missing dependencies
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", dependencies_file])
+
+install_dependencies("dependencies.txt")
 from requests import get, post
 from bs4 import BeautifulSoup
-from urllib.parse import quote_plus
 from colorama import Fore, Style, init as init_console_colors
-from multiprocessing import freeze_support
 
 WEBSITE = "https://inmanga.com"
 IMAGE_WEBSITE = f"{WEBSITE}/page/getPageImage/?identification="

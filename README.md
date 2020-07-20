@@ -3,12 +3,13 @@
 
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/carleslc)
 
-### Dependencias
-#### Dependencies
+### Instalar / Install
+
+#### Python
 
 - [Python 3.6+](https://www.python.org/downloads/)
 
-🇪🇸  *Las dependencias de Python se instalarán automáticamente la primera vez que ejecutes el programa.*
+🇪🇸:  *Las dependencias de Python se instalarán automáticamente la primera vez que ejecutes el programa.*
 
 También puedes instalarlas manualmente con el siguiente comando:
 
@@ -18,7 +19,7 @@ pip install --user -r dependencies.txt
 
 A veces el comando para Python3 es `pip3` en lugar de `pip`.
 
-🇬🇧  *Python dependencies will be installed automatically the first time you run the program.*
+🇬🇧:  *Python dependencies will be installed automatically the first time you run the program.*
 
 Dependencies can also be installed manually with the following command:
 
@@ -93,6 +94,8 @@ parámetros opcionales:
   --remove-alpha        Elimina el canal alpha de las imagenes en la conversión a PDF usando ImageMagick
 ```
 
+#### [¿Qué perfil debo elegir?](https://github.com/ciromattia/kcc/wiki/Profiles)
+
 ### 🇪🇸 Ejemplos
 
 La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Utiliza la opción --profile para cambiar el perfil a tu dispositivo.
@@ -149,6 +152,8 @@ optional arguments:
   --remove-alpha        When converting to PDF remove alpha channel on images
                         using ImageMagick Wand
 ```
+
+#### [Which profile should I choose?](https://github.com/ciromattia/kcc/wiki/Profiles)
 
 ### 🇬🇧 Examples
 

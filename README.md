@@ -39,9 +39,9 @@ Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
 
 #### MOBI / Kindle
 
-Para convertir un manga al formato MOBI (Kindle) necesitarás instalar [KindleGen](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765211).
+Para convertir un manga al formato MOBI (Kindle) necesitarás instalar **KindleGen**. Está incluido en [Kindle Previewer 3](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765261), pero para mayor facilidad lo tienes ya descargado en la carpeta [kindlegen](https://github.com/Carleslc/InMangaKindle/tree/master/kindlegen). Una vez descargado deberás añadir el `kindlegen` a tu PATH.
 
-En las últimas versiones de Mac OS X es posible que la anterior versión no funcione, así que necesitarás instalar [Kindle Previewer 3](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1003018611) y añadir el ejecutable `kindlegen` a tu PATH ejecutando el siguiente comando después de instalarlo: `cp /Applications/Kindle\ Previewer\ 3.app/Contents/MacOS/lib/fc/bin/kindlegen /usr/local/bin/kindlegen`
+- **Mac OSX**: `cp /Applications/Kindle\ Previewer\ 3.app/Contents/lib/fc/bin/kindlegen /usr/local/bin/kindlegen`
 
 Puedes enviar tus capítulos directamente al Kindle con la aplicación [SendToKindle](https://www.amazon.com/gp/sendtokindle).
 

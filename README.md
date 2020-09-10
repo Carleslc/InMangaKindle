@@ -5,9 +5,11 @@
 
 ### Instalar / Install
 
+- Descarga la [última versión](https://github.com/Carleslc/InMangaKindle/releases) del programa.
+
 #### Python
 
-- [Python 3.6+](https://www.python.org/downloads/)
+- Instala [Python 3.6+](https://www.python.org/downloads/)
 
 🇪🇸:  *Las dependencias de Python se instalarán automáticamente la primera vez que ejecutes el programa.*
 
@@ -39,9 +41,23 @@ Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
 
 #### MOBI / Kindle
 
-Para convertir un manga al formato MOBI (Kindle) necesitarás instalar **KindleGen**. Está incluido en [Kindle Previewer 3](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765261), pero para mayor facilidad lo tienes ya descargado en la carpeta [kindlegen](https://github.com/Carleslc/InMangaKindle/tree/master/kindlegen). Una vez descargado deberás añadir el `kindlegen` a tu PATH.
+Para convertir un manga al formato MOBI (Kindle) necesitarás instalar **KindleGen** y añadirlo al PATH. Tienes dos formas de hacerlo:
 
+###### Kindle Previewer 3
+
+_KindleGen_ está incluido en [Kindle Previewer 3](https://www.amazon.com/gp/feature.html?ie=UTF8&docId=1000765261). Una vez descargado:
+
+- **Windows**: El instalador de Kindle Previewer añadirá KindleGen al PATH automáticamente.
 - **Mac OSX**: `cp /Applications/Kindle\ Previewer\ 3.app/Contents/lib/fc/bin/kindlegen /usr/local/bin/kindlegen`
+
+###### Manualmente
+
+Si no quieres descargar Kindle Previewer puedes descargar el binario `kindlegen` manualmente [aquí](https://github.com/Carleslc/InMangaKindle/tree/master/kindlegen). Una vez descargado:
+
+- **Windows**: Sigue [estas instrucciones](https://parzibyte.me/blog/2017/12/21/agregar-directorio-path-windows/) para añadir al PATH la carpeta donde hayas descargado `kindlegen`.
+- **Mac OSX**: `mv ~/Descargas/kindlegen /usr/local/bin/kindlegen`
+
+##### SendToKindle
 
 Puedes enviar tus capítulos directamente al Kindle con la aplicación [SendToKindle](https://www.amazon.com/gp/sendtokindle).
 

@@ -35,6 +35,7 @@ Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
 
 - (EPUB/MOBI format) [Kindle Comic Converter](https://github.com/ciromattia/kcc)
 - [requests](http://docs.python-requests.org/)
+- [cloudscraper](https://pypi.org/project/cloudscraper/)
 - [bs4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
 - [colorama](https://pypi.org/project/colorama/)
 - [img2pdf](https://pypi.org/project/img2pdf/)

@@ -1,7 +1,7 @@
 requests
+cloudscraper
 bs4
 colorama
 img2pdf
 KindleComicConverter
 Wand
-cloudscraper

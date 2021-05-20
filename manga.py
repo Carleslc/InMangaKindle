@@ -4,6 +4,7 @@
 import os
 import re
 import json
+import cloudscraper
 import signal
 import argparse
 import tempfile
@@ -45,6 +46,8 @@ MANGA_DIR = './manga'
 FILENAME_KEEP = set(['_', '-', ' ', '.'])
 DIRECTORY_KEEP = FILENAME_KEEP | set(['/'])
 EXTENSION_KEEP = set('.')
+
+scraper = cloudscraper.create_scraper()
 
 def set_args():
   global args
@@ -134,7 +137,7 @@ def download(filename, url, directory='.', extension='png', text='', ok=200):
     separation = ' ' * (20 - len(text))
     print_colored(f'{text}{separation}- Already exists', Fore.YELLOW)
     return False
-  req = get(url)
+  req = scraper.get(url)
   if success(req, text, ok, print_ok=bool(text)):
     data = req.content
     write_file(path, data)
@@ -267,6 +270,7 @@ def cache_convert(argv):
     convert_except(e, argv)
 
 def online_search():
+
   data = {
     'hfilter[generes][]': '-1',
     'filter[queryString]': MANGA,
@@ -289,7 +293,7 @@ def online_search():
   }
 
   # Alternative Search: https://inmanga.com/OnMangaQuickSearch/Source/QSMangaList.json
-  search = post(SEARCH_URL, data=data, headers=headers)
+  search = scraper.post(SEARCH_URL, data=data, headers=headers)
   exit_if_fails(search)
 
   return BeautifulSoup(search.content, 'html.parser').find_all("a", href=True, recursive=False)
@@ -364,7 +368,7 @@ if __name__ == "__main__":
   if args.cache:
     all_chapters = [int(chapter[0]) for chapter in folders(directory)]
   else:
-    chapters_json = get(CHAPTERS_WEBSITE + uuid)
+    chapters_json = scraper.get(CHAPTERS_WEBSITE + uuid)
     exit_if_fails(chapters_json)
     chapters_full = load_json(chapters_json.content, 'data', 'result')
     all_chapters = [int(chapter['Number']) for chapter in chapters_full]
@@ -407,7 +411,7 @@ if __name__ == "__main__":
           url = CHAPTER_PAGES_WEBSITE + uuid
 
           chapter_dir = chapter_directory(manga, chapter)
-          page = get(url)
+          page = scraper.get(url)
           if success(page, print_ok=False):
             html = BeautifulSoup(page.content, 'html.parser')
             pages = html.find(id='PageList').find_all(True, recursive=False)

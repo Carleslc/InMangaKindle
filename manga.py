@@ -4,11 +4,9 @@
 import os
 import re
 import json
-import cloudscraper
 import signal
 import argparse
 import tempfile
-from urllib.parse import quote_plus
 from multiprocessing import freeze_support
 
 def install_dependencies(dependencies_file):
@@ -29,7 +27,8 @@ def install_dependencies(dependencies_file):
     subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", dependencies_file])
 
 install_dependencies("dependencies.txt")
-from requests import get, post
+
+import cloudscraper
 from bs4 import BeautifulSoup
 from colorama import Fore, Style, init as init_console_colors
 

@@ -46,7 +46,7 @@ FILENAME_KEEP = set(['_', '-', ' ', '.'])
 DIRECTORY_KEEP = FILENAME_KEEP | set(['/'])
 EXTENSION_KEEP = set('.')
 
-scraper = cloudscraper.create_scraper()
+SCRAPER = cloudscraper.create_scraper()
 
 def set_args():
   global args
@@ -136,7 +136,7 @@ def download(filename, url, directory='.', extension='png', text='', ok=200):
     separation = ' ' * (20 - len(text))
     print_colored(f'{text}{separation}- Already exists', Fore.YELLOW)
     return False
-  req = scraper.get(url)
+  req = SCRAPER.get(url)
   if success(req, text, ok, print_ok=bool(text)):
     data = req.content
     write_file(path, data)
@@ -202,7 +202,7 @@ def parse_chapters_range(chapters, last):
   def get_number(number):
     return last if number == 'last' else int(number)
 
-  ranges = chapters.split(',')
+  ranges = chapters.replace(' ', '').split(',')
   try:
     for r in ranges:
       split = r.split('..')
@@ -213,10 +213,22 @@ def parse_chapters_range(chapters, last):
   except ValueError:
     error('Invalid chapters format')
 
-def filename_chapter_range():
-  min_chapter = min(CHAPTERS)
-  max_chapter = max(CHAPTERS)
-  return str(min_chapter) if min_chapter == max_chapter else f'{min_chapter}-{max_chapter}'
+def filename_chapter_range(sorted_chapters):
+  ranges = [] # list[(start, end)]
+
+  if len(sorted_chapters) > 0:
+    start_chapter = sorted_chapters[0]
+    end_chapter = start_chapter
+
+    for chapter in sorted_chapters:
+      if chapter > end_chapter + 1:
+        ranges.append((start_chapter, end_chapter))
+        start_chapter = chapter
+      end_chapter = chapter
+    
+    ranges.append((start_chapter, end_chapter))
+  
+  return ','.join(map(lambda range: f'{range[0]}-{range[1]}' if range[0] != range[1] else str(range[0]), ranges))
 
 def split_rotate_2_pages(rotate):
   return str(1 if rotate else 0)
@@ -292,7 +304,7 @@ def online_search():
   }
 
   # Alternative Search: https://inmanga.com/OnMangaQuickSearch/Source/QSMangaList.json
-  search = scraper.post(SEARCH_URL, data=data, headers=headers)
+  search = SCRAPER.post(SEARCH_URL, data=data, headers=headers)
   exit_if_fails(search)
 
   return BeautifulSoup(search.content, 'html.parser').find_all("a", href=True, recursive=False)
@@ -367,7 +379,7 @@ if __name__ == "__main__":
   if args.cache:
     all_chapters = [int(chapter[0]) for chapter in folders(directory)]
   else:
-    chapters_json = scraper.get(CHAPTERS_WEBSITE + uuid)
+    chapters_json = SCRAPER.get(CHAPTERS_WEBSITE + uuid)
     exit_if_fails(chapters_json)
     chapters_full = load_json(chapters_json.content, 'data', 'result')
     all_chapters = [int(chapter['Number']) for chapter in chapters_full]
@@ -377,10 +389,11 @@ if __name__ == "__main__":
     print_colored(f'Last downloaded chapter: {last}', Fore.YELLOW, Style.BRIGHT);
 
   if args.chapters:
-    args.chapters = args.chapters.replace(' ', '')
     parse_chapters_range(args.chapters, last)
   else:
     CHAPTERS.update(all_chapters)
+  
+  CHAPTERS = sorted(CHAPTERS)
 
   if args.cache:
     for chapter in CHAPTERS:
@@ -394,7 +407,6 @@ if __name__ == "__main__":
       if number in CHAPTERS:
         uuids[number] = chapter['Identification']
 
-    CHAPTERS = sorted(CHAPTERS)
     print_dim(f'{len(CHAPTERS)} chapter{plural(len(CHAPTERS))} will be downloaded - Cancel with Ctrl+C')
 
     if not args.cache:
@@ -410,7 +422,7 @@ if __name__ == "__main__":
           url = CHAPTER_PAGES_WEBSITE + uuid
 
           chapter_dir = chapter_directory(manga, chapter)
-          page = scraper.get(url)
+          page = SCRAPER.get(url)
           if success(page, print_ok=False):
             html = BeautifulSoup(page.content, 'html.parser')
             pages = html.find(id='PageList').find_all(True, recursive=False)
@@ -427,7 +439,7 @@ if __name__ == "__main__":
   extension = f'.{args.format.lower()}'
   args.format = args.format.upper()
 
-  chapter_range = args.chapters.replace('last', str(last)) if args.chapters else filename_chapter_range()
+  chapter_range = filename_chapter_range(CHAPTERS)
 
   if args.format != 'PNG':
     print_colored(f'Converting to {args.format}...', Fore.BLUE, Style.BRIGHT)
@@ -480,4 +492,6 @@ if __name__ == "__main__":
           os.rename(f'{MANGA_DIR}/{chapter}{extension}', path)
           print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
   else:
+    if len(CHAPTERS) == 1:
+      directory = os.path.abspath(chapter_directory(manga, CHAPTERS[0]))
     print_colored(f'DONE: {directory}', Fore.GREEN, Style.BRIGHT)

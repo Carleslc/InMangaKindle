@@ -9,7 +9,7 @@
 
 #### Python
 
-- Instala [Python 3.6+](https://www.python.org/downloads/)
+- Instala [Python 3.6+](https://www.python.org/downloads/). Se recomienda la versión [3.9.9](https://www.python.org/downloads/release/python-399/) (detalles: [#13](https://github.com/Carleslc/InMangaKindle/issues/13))
 
 🇪🇸:  *Las dependencias de Python se instalarán automáticamente la primera vez que ejecutes el programa.*
 

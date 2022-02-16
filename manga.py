@@ -1,20 +1,29 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+VERSION = '1.6'
+
+NAME = 'InMangaKindle'
+WEBSITE = 'https://carleslc.me/InMangaKindle/'
+
+SUPPORT_PYTHON = [(3,6,0), (3,9,9)]
+RECOMMENDED_PYTHON = 'https://www.python.org/downloads/release/python-399/'
+
 import os
 import re
+import sys
 import math
 import json
 import signal
 import argparse
 import tempfile
 import bisect
+import platform
+import subprocess
 from multiprocessing import freeze_support
 
 def install_dependencies(dependencies_file):
   # Check dependencies
-  import subprocess
-  import sys
   from pathlib import Path
   import pkg_resources
   dependencies_path = Path(__file__).with_name(dependencies_file)
@@ -30,15 +39,16 @@ def install_dependencies(dependencies_file):
 
 install_dependencies("dependencies.txt")
 
+import requests
 import cloudscraper
 from bs4 import BeautifulSoup
 from colorama import Fore, Style, init as init_console_colors
 
-WEBSITE = "https://inmanga.com"
-IMAGE_WEBSITE = f"{WEBSITE}/page/getPageImage/?identification="
-CHAPTERS_WEBSITE = f"{WEBSITE}/chapter/getall?mangaIdentification="
-CHAPTER_PAGES_WEBSITE = f"{WEBSITE}/chapter/chapterIndexControls?identification="
-MANGA_WEBSITE = f"{WEBSITE}/ver/manga"
+PROVIDER_WEBSITE = "https://inmanga.com"
+IMAGE_WEBSITE = f"{PROVIDER_WEBSITE}/page/getPageImage/?identification="
+CHAPTERS_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/getall?mangaIdentification="
+CHAPTER_PAGES_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/chapterIndexControls?identification="
+MANGA_WEBSITE = f"{PROVIDER_WEBSITE}/ver/manga"
 
 SEARCH_URL = "https://inmanga.com/manga/getMangasConsultResult"
 
@@ -54,7 +64,7 @@ CHAPTERS_FORMAT = 'Format: start..end or chapters with commas. Example: --chapte
 
 def set_args():
   global args
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser(prog=NAME, epilog=f'web: {WEBSITE}')
   parser.add_argument("manga", help="manga to download", nargs='+')
   parser.add_argument("--chapters", "--chapter", help=f'chapters to download. {CHAPTERS_FORMAT} If this argument is not provided all chapters will be downloaded.', nargs='+')
   parser.add_argument("--directory", help=f"directory to save downloads. Default: {MANGA_DIR}", default=MANGA_DIR)
@@ -65,7 +75,47 @@ def set_args():
   parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
   parser.add_argument("--cache", action='store_true', help="Avoid downloading chapters and use already downloaded chapters instead (offline)")
   parser.add_argument("--remove-alpha", action='store_true', help="When converting to PDF remove alpha channel on images using ImageMagick Wand")
+  parser.add_argument("--version", "-v", action='version', help="Display current InMangaKindle version", version=version())
   args = parser.parse_args()
+
+def version():
+  return f'{Style.BRIGHT}%(prog)s {Fore.CYAN}{VERSION}{Style.RESET_ALL}'
+
+def check_version():
+  latest_version = VERSION
+  try:
+    response = requests.get(f'https://api.github.com/repos/Carleslc/{NAME}/releases/latest')
+    latest_version = load_json(response.content, 'tag_name')
+    html_url = load_json(response.content, 'html_url')
+  except:
+    if not args.cache:
+      print_dim(f'Cannot check for updates. Version: {VERSION}', Fore.YELLOW)
+  if latest_version != VERSION:
+    print_colored(f'New version is available! {VERSION} -> {latest_version}', Style.BRIGHT, Fore.GREEN)
+    print_colored(f'Upgrade to the latest version: {html_url}', Fore.GREEN)
+    if os.path.isdir('.git'):
+      print_colored('Git detected. Do you want to checkout the new version❓ [Y/n]', Fore.YELLOW, Style.BRIGHT, end=' ')
+      try:
+        answer = input()
+        if not answer or answer.lower() == 'y':
+          subprocess.check_call(['git', 'fetch', 'origin', 'master'])
+          subprocess.check_call(['git', 'checkout', latest_version])
+      except:
+        print('If you want to update later manually use ', end='')
+        print_colored(f'git fetch && git checkout {latest_version}', Fore.YELLOW)
+
+def is_python_version_supported():
+  min_version, max_version = SUPPORT_PYTHON
+  major, minor, _ = platform.python_version_tuple()
+  major = int(major)
+  minor = int(minor)
+  return major >= min_version[0] and minor >= min_version[1] and major <= max_version[0] and minor <= max_version[1]
+
+def python_not_supported():
+  min_version, max_version = SUPPORT_PYTHON
+  min_version = '.'.join(map(str, min_version))
+  max_version = '.'.join(map(str, max_version))
+  return f'Your Python version {platform.python_version()} is not supported ({sys.executable} --version). Please, use a Python version between {min_version} and {max_version}\n{RECOMMENDED_PYTHON}'
 
 def print_colored(message, *colors, end='\n'):
   def printnoln(s):
@@ -98,6 +148,12 @@ def cancellable():
     signal.signal(signal.SIGINT, cancel)
   except:
     pass
+
+def network_error():
+  tip = 'Are you connected to Internet?'
+  if not args.cache:
+    tip += '\nYou can use offline mode (using your already downloaded chapters) with --cache'
+  error('Network error', tip)
 
 def success(request, text='', ok=200, print_ok=True):
   if request.status_code == ok:
@@ -367,6 +423,12 @@ def convert_except(e, argv):
     parts = corrupted_file_path[0].split('/')
     corrupted_file = f'{parts[-2]}/{parts[-1]}'
     fix_corrupted_file(corrupted_file, os.path.abspath(corrupted_file_path[0]), argv)
+  elif message.startswith('("One of workers crashed. Cause: \'float\' object cannot be interpreted as an integer"'):
+    tip = 'https://github.com/Carleslc/InMangaKindle/issues/13'
+    python_supported = is_python_version_supported()
+    if not python_supported:
+      tip = python_not_supported() + '\n' + tip
+    error(tip, message)
   else:
     import traceback
     traceback.print_tb(e.__traceback__)
@@ -401,9 +463,12 @@ def online_search():
     'X-Requested-With': 'XMLHttpRequest'
   }
 
-  # Alternative Search: https://inmanga.com/OnMangaQuickSearch/Source/QSMangaList.json
-  search = SCRAPER.post(SEARCH_URL, data=data, headers=headers)
-  exit_if_fails(search)
+  try:
+    # Alternative Search: https://inmanga.com/OnMangaQuickSearch/Source/QSMangaList.json
+    search = SCRAPER.post(SEARCH_URL, data=data, headers=headers)
+    exit_if_fails(search)
+  except requests.exceptions.ConnectionError:
+    network_error()
 
   return BeautifulSoup(search.content, 'html.parser').find_all("a", href=True, recursive=False)
 
@@ -416,6 +481,8 @@ if __name__ == "__main__":
   # PARSE ARGS
 
   set_args()
+
+  check_version()
 
   MANGA_DIR = strip_path(args.directory, DIRECTORY_KEEP)
 
@@ -476,8 +543,11 @@ if __name__ == "__main__":
   if args.cache:
     ALL_CHAPTERS = [float(chapter[0]) for chapter in folders(directory)]
   else:
-    chapters_json = SCRAPER.get(CHAPTERS_WEBSITE + manga_uuid)
-    exit_if_fails(chapters_json)
+    try:
+      chapters_json = SCRAPER.get(CHAPTERS_WEBSITE + manga_uuid)
+      exit_if_fails(chapters_json)
+    except requests.exceptions.ConnectionError:
+      network_error()
     chapters_full = load_json(chapters_json.content, 'data', 'result')
     CHAPTERS_IDS = { float(chapter['Number']): chapter['Identification'] for chapter in chapters_full }
     ALL_CHAPTERS = CHAPTERS_IDS.keys()
@@ -520,16 +590,19 @@ if __name__ == "__main__":
       url = CHAPTER_PAGES_WEBSITE + CHAPTERS_IDS[chapter]
 
       chapter_dir = chapter_directory(manga, chapter)
-      page = SCRAPER.get(url)
+      try:
+        page = SCRAPER.get(url)
 
-      if success(page, print_ok=False):
-        html = BeautifulSoup(page.content, 'html.parser')
-        pages = html.find(id='PageList').find_all(True, recursive=False)
-        for page in pages:
-          page_id = page.get('value')
-          page_number = int(page.get_text())
-          url = IMAGE_WEBSITE + page_id
-          download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)')
+        if success(page, print_ok=False):
+          html = BeautifulSoup(page.content, 'html.parser')
+          pages = html.find(id='PageList').find_all(True, recursive=False)
+          for page in pages:
+            page_id = page.get('value')
+            page_number = int(page.get_text())
+            url = IMAGE_WEBSITE + page_id
+            download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)')
+      except requests.exceptions.ConnectionError:
+        network_error()
 
   extension = f'.{args.format.lower()}'
   args.format = args.format.upper()

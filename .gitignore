@@ -2,3 +2,4 @@ env
 manga
 .vscode
 *.DS_Store
+.python-version

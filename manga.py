@@ -75,22 +75,35 @@ def set_args():
   parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
   parser.add_argument("--cache", action='store_true', help="Avoid downloading chapters and use already downloaded chapters instead (offline)")
   parser.add_argument("--remove-alpha", action='store_true', help="When converting to PDF remove alpha channel on images using ImageMagick Wand")
-  parser.add_argument("--version", "-v", action='version', help="Display current InMangaKindle version", version=version())
+  parser.add_argument("--version", "-v", action=CheckVersion, help="Display current InMangaKindle version", version=VERSION)
   args = parser.parse_args()
 
-def version():
-  return f'{Style.BRIGHT}%(prog)s {Fore.CYAN}{VERSION}{Style.RESET_ALL}'
+class CheckVersion(argparse.Action):
+  def __init__(self, option_strings, version=VERSION, **kwargs):
+    super(CheckVersion, self).__init__(option_strings, nargs=0, **kwargs)
+    self.version = version
+  def __call__(self, parser, namespace, values, option_string=None):
+    if not is_python_version_supported():
+      print_colored(python_not_supported(), Fore.RED)
+    print_colored(NAME, Style.BRIGHT, end=' ')
+    print_colored(self.version, Style.BRIGHT, Fore.CYAN)
+    if check_version():
+      print_colored('✅ Up to date', Fore.GREEN)
+    exit()
 
 def check_version():
-  latest_version = VERSION
+  latest_version = None
   try:
     response = requests.get(f'https://api.github.com/repos/Carleslc/{NAME}/releases/latest')
-    latest_version = load_json(response.content, 'tag_name')
     html_url = load_json(response.content, 'html_url')
+    latest_version = load_json(response.content, 'tag_name')
   except:
     if not args.cache:
       print_dim(f'Cannot check for updates. Version: {VERSION}', Fore.YELLOW)
-  if latest_version != VERSION:
+  if latest_version is None:
+    return False
+  is_updated = latest_version == VERSION
+  if not is_updated:
     print_colored(f'New version is available! {VERSION} -> {latest_version}', Style.BRIGHT, Fore.GREEN)
     print_colored(f'Upgrade to the latest version: {html_url}', Fore.GREEN)
     if os.path.isdir('.git'):
@@ -103,6 +116,7 @@ def check_version():
       except:
         print('If you want to update later manually use ', end='')
         print_colored(f'git fetch && git checkout {latest_version}', Fore.YELLOW)
+  return is_updated
 
 def is_python_version_supported():
   min_version, max_version = SUPPORT_PYTHON
@@ -115,7 +129,7 @@ def python_not_supported():
   min_version, max_version = SUPPORT_PYTHON
   min_version = '.'.join(map(str, min_version))
   max_version = '.'.join(map(str, max_version))
-  return f'Your Python version {platform.python_version()} is not supported ({sys.executable} --version). Please, use a Python version between {min_version} and {max_version}\n{RECOMMENDED_PYTHON}'
+  return f'Your Python version {platform.python_version()} is not fully supported ({sys.executable} --version). Please, use a Python version between {min_version} and {max_version}\n{RECOMMENDED_PYTHON}'
 
 def print_colored(message, *colors, end='\n'):
   def printnoln(s):

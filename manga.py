@@ -25,16 +25,28 @@ from multiprocessing import freeze_support
 DEPENDENCIES_FILE = "dependencies.txt"
 
 def check_dependencies(dependencies_file):
+  '''Install dependencies if not installed'''
   from pathlib import Path
-  import pkg_resources
-  dependencies_path = Path(__file__).with_name(dependencies_file)
-  dependencies = pkg_resources.parse_requirements(dependencies_path.open())
   try:
+    from importlib.metadata import distribution, PackageNotFoundError
+  except ImportError:
+    # Fallback for Python < 3.8
+    from importlib_metadata import distribution, PackageNotFoundError  # pyright: ignore[reportMissingImports]
+  try:
+    from packaging.requirements import Requirement
+    
+    dependencies_path = Path(__file__).with_name(dependencies_file)
+    with dependencies_path.open() as f:
+      dependencies = [Requirement(line.strip()) for line in f if line.strip() and not line.strip().startswith('#')]
+    
+    if sys.version_info >= (3, 8):
+      dependencies = [dependency for dependency in dependencies if dependency.name != 'importlib-metadata']
+    
     for dependency in dependencies:
-      dependency = str(dependency)
-      pkg_resources.require(dependency)
-  except pkg_resources.DistributionNotFound as e:
-    print("Some dependencies are missing, installing...")
+      # Check if the package is installed
+      distribution(dependency.name)
+  except (PackageNotFoundError, ImportError):
+    print_colored("Some dependencies are missing, installing...", Fore.YELLOW)
     # Install missing dependencies
     install_dependencies(dependencies_file)
 

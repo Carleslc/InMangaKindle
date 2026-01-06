@@ -46,15 +46,22 @@ def check_dependencies(dependencies_file):
       # Check if the package is installed
       distribution(dependency.name)
   except (PackageNotFoundError, ImportError):
-    print_colored("Some dependencies are missing, installing...", Fore.YELLOW)
+    print("Some dependencies are missing, installing...")
     # Install missing dependencies
     install_dependencies(dependencies_file)
 
-def install_dependencies(dependencies_file):
+def install_dependencies(dependencies_file, update=False):
   try:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "-r", dependencies_file])
+    install_command = [sys.executable, "-m", "pip", "install"]
+    if update:
+      install_command.append("--upgrade")
+    install_command.append("-r")
+    install_command.append(dependencies_file)
+    subprocess.check_call(install_command)
   except subprocess.CalledProcessError as e:
     error(f"Failed to install dependencies: {e}")
+
+check_dependencies(DEPENDENCIES_FILE)
 
 import requests
 import cloudscraper
@@ -102,7 +109,7 @@ class InstallDependencies(argparse.Action):
   def __call__(self, parser, namespace, values, option_string=None):
     check_version()
     print_colored("Updating dependencies...", Fore.YELLOW)
-    install_dependencies(DEPENDENCIES_FILE)
+    install_dependencies(DEPENDENCIES_FILE, update=True)
     exit()
 
 class CheckVersion(argparse.Action):
@@ -536,11 +543,7 @@ if __name__ == "__main__":
 
   MANGA = ' '.join(args.manga)
 
-  # CHECK DEPENDENCIES
-
   check_version()
-
-  check_dependencies(DEPENDENCIES_FILE)
 
   # SEARCH ANIME
 

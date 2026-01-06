@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-VERSION = '1.6'
+VERSION = '1.7'
 
 NAME = 'InMangaKindle'
 WEBSITE = 'https://carleslc.me/InMangaKindle/'
@@ -22,8 +22,9 @@ import platform
 import subprocess
 from multiprocessing import freeze_support
 
-def install_dependencies(dependencies_file):
-  # Check dependencies
+DEPENDENCIES_FILE = "dependencies.txt"
+
+def check_dependencies(dependencies_file):
   from pathlib import Path
   import pkg_resources
   dependencies_path = Path(__file__).with_name(dependencies_file)
@@ -35,9 +36,13 @@ def install_dependencies(dependencies_file):
   except pkg_resources.DistributionNotFound as e:
     print("Some dependencies are missing, installing...")
     # Install missing dependencies
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", dependencies_file])
+    install_dependencies(dependencies_file)
 
-install_dependencies("dependencies.txt")
+def install_dependencies(dependencies_file):
+  try:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "-r", dependencies_file])
+  except subprocess.CalledProcessError as e:
+    error(f"Failed to install dependencies: {e}")
 
 import requests
 import cloudscraper
@@ -75,6 +80,7 @@ def set_args():
   parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
   parser.add_argument("--cache", action='store_true', help="Avoid downloading chapters and use already downloaded chapters instead (offline)")
   parser.add_argument("--remove-alpha", action='store_true', help="When converting to PDF remove alpha channel on images using ImageMagick Wand")
+  parser.add_argument("--update", action='store_true', help="Update dependencies to the latest version")
   parser.add_argument("--version", "-v", action=CheckVersion, help="Display current InMangaKindle version", version=VERSION)
   args = parser.parse_args()
 
@@ -108,14 +114,19 @@ def check_version():
     print_colored(f'Upgrade to the latest version: {html_url}', Fore.GREEN)
     if os.path.isdir('.git'):
       print_colored('Git detected. Do you want to checkout the new version❓ [Y/n]', Fore.YELLOW, Style.BRIGHT, end=' ')
-      try:
-        answer = input()
-        if not answer or answer.lower() == 'y':
-          subprocess.check_call(['git', 'fetch', 'origin', 'master'])
-          subprocess.check_call(['git', 'checkout', latest_version])
-      except:
-        print('If you want to update later manually use ', end='')
-        print_colored(f'git fetch && git checkout {latest_version}', Fore.YELLOW)
+      answer = input()
+      if not answer or answer.lower() == 'y':
+        try:
+            subprocess.check_call(['git', 'fetch', '--tags', 'origin'])
+            subprocess.check_call(['git', 'checkout', latest_version])
+            print_colored('Updated to the latest version', Fore.GREEN, end=' ')
+            print_colored(latest_version, Style.BRIGHT, Fore.CYAN)
+            print_colored(f'Run {NAME} again to use the latest version', Fore.YELLOW, Style.BRIGHT)
+            exit()
+        except subprocess.CalledProcessError as e:
+          error(f'Failed to update: {e}', halt=False)
+      print('If you want to update later manually use ', end='')
+      print_colored(f'git fetch --tags && git checkout {latest_version}', Fore.YELLOW)
   return is_updated
 
 def is_python_version_supported():
@@ -139,11 +150,12 @@ def print_colored(message, *colors, end='\n'):
   print(message, end=end)
   printnoln(Style.RESET_ALL)
 
-def error(message, tip=''):
+def error(message, tip='', halt=True):
   print_colored(message, Fore.RED, Style.BRIGHT)
   if tip:
     print_dim(tip)
-  exit()
+  if halt:
+    exit()
 
 def not_found():
   error(f"Manga '{MANGA}' not found")
@@ -496,14 +508,21 @@ if __name__ == "__main__":
 
   set_args()
 
-  check_version()
-
   MANGA_DIR = strip_path(args.directory, DIRECTORY_KEEP)
 
   if not args.profile:
     args.profile = 'KPW'
 
   MANGA = ' '.join(args.manga)
+
+  # CHECK DEPENDENCIES
+
+  check_version()
+
+  if args.update:
+    install_dependencies(DEPENDENCIES_FILE)
+  else:
+    check_dependencies(DEPENDENCIES_FILE)
 
   # SEARCH ANIME
 

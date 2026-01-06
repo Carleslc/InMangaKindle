@@ -92,17 +92,24 @@ def set_args():
   parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
   parser.add_argument("--cache", action='store_true', help="Avoid downloading chapters and use already downloaded chapters instead (offline)")
   parser.add_argument("--remove-alpha", action='store_true', help="When converting to PDF remove alpha channel on images using ImageMagick Wand")
-  parser.add_argument("--update", action='store_true', help="Update dependencies to the latest version")
+  parser.add_argument("--update", action=InstallDependencies, help="Update dependencies to the latest version")
   parser.add_argument("--version", "-v", action=CheckVersion, help="Display current InMangaKindle version", version=VERSION)
   args = parser.parse_args()
+
+class InstallDependencies(argparse.Action):
+  def __init__(self, option_strings, **kwargs):
+    super(InstallDependencies, self).__init__(option_strings, nargs=0, **kwargs)
+  def __call__(self, parser, namespace, values, option_string=None):
+    check_version()
+    print_colored("Updating dependencies...", Fore.YELLOW)
+    install_dependencies(DEPENDENCIES_FILE)
+    exit()
 
 class CheckVersion(argparse.Action):
   def __init__(self, option_strings, version=VERSION, **kwargs):
     super(CheckVersion, self).__init__(option_strings, nargs=0, **kwargs)
     self.version = version
   def __call__(self, parser, namespace, values, option_string=None):
-    if not is_python_version_supported():
-      print_colored(python_not_supported(), Fore.RED)
     print_colored(NAME, Style.BRIGHT, end=' ')
     print_colored(self.version, Style.BRIGHT, Fore.CYAN)
     if check_version():
@@ -110,6 +117,8 @@ class CheckVersion(argparse.Action):
     exit()
 
 def check_version():
+  if not is_python_version_supported():
+    print_colored(python_not_supported(), Fore.RED)
   latest_version = None
   try:
     response = requests.get(f'https://api.github.com/repos/Carleslc/{NAME}/releases/latest')
@@ -531,10 +540,7 @@ if __name__ == "__main__":
 
   check_version()
 
-  if args.update:
-    install_dependencies(DEPENDENCIES_FILE)
-  else:
-    check_dependencies(DEPENDENCIES_FILE)
+  check_dependencies(DEPENDENCIES_FILE)
 
   # SEARCH ANIME
 

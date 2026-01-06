@@ -1,5 +1,9 @@
-env
-manga
-.vscode
-*.DS_Store
+env/
+venv/
+
+manga/
+
+.vscode/
+.cursor/
+.DS_Store
 .python-version

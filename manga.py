@@ -6,8 +6,8 @@ VERSION = '1.7'
 NAME = 'InMangaKindle'
 WEBSITE = 'https://carleslc.me/InMangaKindle/'
 
-SUPPORT_PYTHON = [(3,6,0), (3,9,9)]
-RECOMMENDED_PYTHON = 'https://www.python.org/downloads/release/python-399/'
+SUPPORT_PYTHON = [(3,6,0), (3,14,0)]
+RECOMMENDED_PYTHON = 'https://www.python.org/downloads/latest/python3.13/'
 
 import os
 import re
@@ -168,7 +168,7 @@ def python_not_supported():
   min_version, max_version = SUPPORT_PYTHON
   min_version = '.'.join(map(str, min_version))
   max_version = '.'.join(map(str, max_version))
-  return f'Your Python version {platform.python_version()} is not fully supported ({sys.executable} --version). Please, use a Python version between {min_version} and {max_version}\n{RECOMMENDED_PYTHON}'
+  return f'Your Python version {platform.python_version()} may not be fully supported ({sys.executable} --version). Please, use a Python version between {min_version} and {max_version}\n{RECOMMENDED_PYTHON}'
 
 def print_colored(message, *colors, end='\n'):
   def printnoln(s):

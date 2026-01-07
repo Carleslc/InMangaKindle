@@ -126,11 +126,11 @@ parámetros opcionales:
 
 La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Utiliza la opción --profile para cambiar el perfil a tu dispositivo.
 
-- `python manga.py "one piece" --chapters 880..last --single` descargará los capítulos desde el 880 hasta el último disponible del manga _One Piece_ y los empaquetará en un único archivo MOBI
-- `python manga.py "one piece" --chapters 880..last --format PDF --single` hace lo mismo que el ejemplo anterior pero en formato PDF para leer en el ordenador
-- `python manga.py "shingeki no kyojin" --chapter last --format EPUB` descargará el último capítulo de _Shingeki no Kyojin_ como EPUB
-- `python manga.py "dragon ball" --chapters "1, 2, 8..11"` descargará los capítulos 1, 2, 8, 9, 10, 11 de _Dragon Ball_ en diferentes archivos MOBI
-- `python manga.py "one piece" --chapters 900..910 --single --rotate --cache` utilizará los capítulos descargados previamente para crear un archivo MOBI con los capítulos del 900 al 910 de *One Piece*. También girará las páginas dobles para verlas en horizontal en lugar de dos páginas diferentes.
+- `python manga.py "one piece" --chapters 900..last --single` descargará los capítulos desde el 900 hasta el último disponible del manga _One Piece_ y los empaquetará en un único archivo EPUB
+- `python manga.py "one piece" --chapters 900..last --format PDF --single` hace lo mismo que el ejemplo anterior pero en formato PDF para leer en el ordenador
+- `python manga.py "shingeki no kyojin" --chapter last --format MOBI` descargará el último capítulo de _Shingeki no Kyojin_ como archivo MOBI
+- `python manga.py "dragon ball" --chapters "1, 2, 8..11"` descargará los capítulos 1, 2, 8, 9, 10, 11 de _Dragon Ball_ en diferentes archivos EPUB
+- `python manga.py "one piece" --chapters 900..910 --single --rotate --cache` utilizará los capítulos descargados previamente para crear un archivo EPUB con los capítulos del 900 al 910 de *One Piece*. También girará las páginas dobles para verlas en horizontal en lugar de dos páginas diferentes.
 
 ### 🇬🇧 Usage
 
@@ -186,8 +186,8 @@ options:
 
 Default screen resolution is for Kindle Paperwhite device profile. Use option --profile to change the profile to your device.
 
-- `python manga.py "one piece" --chapters 880..last --single` will download _One Piece_ chapters from 880 to the last chapter available and pack them into one single MOBI file
-- `python manga.py "one piece" --chapters 880..last --format PDF --single` will result in the same as above but in PDF instead MOBI
-- `python manga.py "shingeki no kyojin" --chapter last --format EPUB` will download the last chapter of _Shingeki no Kyojin_ as EPUB
-- `python manga.py "dragon ball" --chapters "1, 2, 8..11"` will download chapters 1, 2, 8, 9, 10, 11 of _Dragon Ball_ as different MOBI files
-- `python manga.py "one piece" --chapters 900..910 --single --rotate --cache` will reuse chapters previously downloaded to create a new MOBI file with *One Piece* chapters from 900 to 910. Double pages will be rotated to read horizontally instead of two splitted pages.
+- `python manga.py "one piece" --chapters 900..last --single` will download _One Piece_ chapters from 900 to the last chapter available and pack them into one single EPUB file
+- `python manga.py "one piece" --chapters 900..last --format PDF --single` will result in the same as above but in PDF instead EPUB
+- `python manga.py "shingeki no kyojin" --chapter last --format MOBI` will download the last chapter of _Shingeki no Kyojin_ as MOBI file
+- `python manga.py "dragon ball" --chapters "1, 2, 8..11"` will download chapters 1, 2, 8, 9, 10, 11 of _Dragon Ball_ as different EPUB files
+- `python manga.py "one piece" --chapters 900..910 --single --rotate --cache` will reuse chapters previously downloaded to create a new EPUB file with *One Piece* chapters from 900 to 910. Double pages will be rotated to read horizontally instead of two splitted pages.

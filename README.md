@@ -19,7 +19,11 @@ También puedes instalarlas manualmente con el siguiente comando:
 pip install --user -r dependencies.txt
 ```
 
-A veces el comando para Python3 es `pip3` en lugar de `pip`.
+Puedes actualizar las dependencias en cualquier momento con el siguiente comando:
+
+```shell
+python manga.py --update
+```
 
 🇬🇧:  *Python dependencies will be installed automatically the first time you run the program.*
 
@@ -29,7 +33,11 @@ Dependencies can also be installed manually with the following command:
 pip install --user -r dependencies.txt
 ```
 
-Sometimes dependencies command for Python3 is `pip3` instead of `pip`.
+You can also update these dependencies with the following command:
+
+```shell
+python manga.py --update
+```
 
 *Instalará / Will install:*
 
@@ -75,9 +83,9 @@ A veces el comando `python` es `python3`. Comprueba que la versión sea superior
 `python manga.py -h`
 
 ```
-uso: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY] [--single]
-                [--rotate] [--profile PROFILE] [--format FORMAT] [--fullsize]
-                [--cache] [--remove-alpha]
+uso: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY]
+                [--single] [--rotate] [--profile PROFILE] [--format FORMAT] [--fullsize]
+                [--cache] [--remove-alpha] [--update] [--version]
                 manga
 
 parámetros posicionales:
@@ -92,23 +100,24 @@ parámetros opcionales:
                         --chapter 3 descarga sólo el capítulo 3,
                         "3, 12" descarga el 3 y el 12, --chapters
                         "3..12, 15" descarga desde el 3 hasta el 12 y
-                        también el capítulo 15. Si este argumento no se proporciona
+                        también el capítulo 15. Si no se proporciona este parámetro,
                         se descargarán todos los capítulos disponibles.
   --directory DIRECTORY
                         directorio/carpeta para guardar las descargas. Por defecto: ./manga
-  --single              empaqueta los capítulos en un único archivo. Si este parámetro no se proporciona
-                        cada capítulo se creará en un fichero independiente.
-  --rotate              rota las dobles páginas. Si este parámetro no se proporciona
+  --single              empaqueta los capítulos en un único archivo. Si no se proporciona este parámetro,
+                        cada capítulo se creará en un archivo independiente.
+  --rotate              rota las dobles páginas. Si no se proporciona este parámetro,
                         las dobles páginas se dividirán en dos páginas separadas.
   --profile PROFILE     Dispositivo (Opciones disponibles: K1, K2, K34, K578,
                         KDX, KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD,
                         KoAH2O, KoAO) [Por defecto = KPW (Kindle Paperwhite)]
-  --format FORMAT       Formato de salida (Opciones disponibles: PNG, PDF, MOBI, EPUB,
-                        CBZ) [Por defecto = MOBI]. Si se selecciona PNG entonces no
-                        se hará ninguna conversión.
-  --fullsize            con este parámetro no se ajustará el tamaño de las imágenes al perfil del dispositivo
+  --format FORMAT       Formato de salida (Opciones disponibles: PNG, PDF, EPUB, MOBI, CBZ)
+                        [Por defecto = EPUB]. Si se selecciona PNG entonces no se hará ninguna conversión.
+  --fullsize            No ajustar el tamaño de las imágenes al perfil del dispositivo
   --cache               Utiliza las imágenes en local sin descargar ningún capítulo (modo sin conexión)
   --remove-alpha        Elimina el canal alpha de las imagenes en la conversión a PDF usando ImageMagick
+  --update              Actualiza las dependencias del programa a la última versión
+  --version, -v         Muestra la versión actual de InMangaKindle
 ```
 
 #### [¿Qué perfil debo elegir?](https://github.com/ciromattia/kcc/wiki/Profiles)
@@ -130,44 +139,45 @@ Sometimes `python` command is `python3`. Check that your version is greater than
 `python manga.py -h`
 
 ```
-usage: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY] [--single]
-                [--rotate] [--profile PROFILE] [--format FORMAT] [--fullsize]
-                [--cache] [--remove-alpha]
+usage: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY]
+                [--single] [--rotate] [--profile PROFILE] [--format FORMAT] [--fullsize]
+                [--cache] [--remove-alpha] [--update] [--version]
                 manga
 
 positional arguments:
   manga                 manga to download
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
-  --chapters CHAPTERS, --chapter CHAPTERS
-                        chapters to download. Format: start..end or chapters
-                        with commas. Example: --chapters "3..last" will
-                        download chapters from 3 to the last chapter,
-                        --chapter 3 will download only chapter 3, --chapters
-                        "3, 12" will download chapters 3 and 12, --chapters
-                        "3..12, 15" will download chapters from 3 to 12 and
-                        also chapter 15. If this argument is not provided all
-                        chapters will be downloaded.
+  --chapters, --chapter CHAPTERS
+                        chapters to download. Format: start..end or chapters with
+                        commas. Example: --chapter 3 will download chapter 3,
+                        --chapter last will download the last chapter available,
+                        --chapters 3..last will download chapters from 3 to the last
+                        chapter, --chapter 3 will download only chapter 3, --chapters
+                        "3, 12" will download chapters 3 and 12, --chapters "3..12,
+                        15" will download chapters from 3 to 12 and also chapter 15.
+                        If this argument is not provided all chapters will be
+                        downloaded.
   --directory DIRECTORY
                         directory to save downloads. Default: ./manga
-  --single              merge all chapters in only one file. If this argument
-                        is not provided every chapter will be in a different
-                        file
-  --rotate              rotate double pages. If this argument is not provided
-                        double pages will be splitted in 2 different pages
-  --profile PROFILE     Device profile (Available options: K1, K2, K34, K578,
-                        KDX, KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD,
-                        KoAH2O, KoAO) [Default = KPW (Kindle Paperwhite)]
-  --format FORMAT       Output format (Available options: PNG, PDF, MOBI,
-                        EPUB, CBZ) [Default = MOBI]. If PNG is selected then
-                        no conversion to e-reader file will be done
-  --fullsize            Do not stretch images to the profile's device
-                        resolution
+  --single              merge all chapters in only one file. If this argument is not
+                        provided every chapter will be in a different file
+  --rotate              rotate double pages. If this argument is not provided double
+                        pages will be splitted in 2 different pages
+  --profile PROFILE     Device profile (Available options: K1, K2, K34, K578, KDX,
+                        KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD, KoAH2O, KoAO)
+                        [Default = KPW (Kindle Paperwhite)]
+  --format FORMAT       Output format (Available options: PNG, PDF, EPUB, MOBI, CBZ)
+                        [Default = EPUB]. If PNG is selected then no conversion to
+                        e-reader file will be done
+  --fullsize            Do not stretch images to the profile's device resolution
   --cache               Avoid downloading chapters and use already downloaded
                         chapters instead (offline)
-  --remove-alpha        When converting to PDF remove alpha channel on images
-                        using ImageMagick Wand
+  --remove-alpha        When converting to PDF remove alpha channel on images using
+                        ImageMagick Wand
+  --update              Update dependencies to the latest version
+  --version, -v         Display current InMangaKindle version
 ```
 
 #### [Which profile should I choose?](https://github.com/ciromattia/kcc/wiki/Profiles)

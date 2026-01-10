@@ -9,7 +9,7 @@
 
 #### Python
 
-- Instala [Python 3.6+](https://www.python.org/downloads/). Se recomienda la versión [3.13](https://www.python.org/downloads/latest/python3.13/)
+- Instala [Python 3.6+](https://www.python.org/downloads/). Se recomienda la versión [3.13](https://www.python.org/downloads/latest/python3.13/).
 
 🇪🇸:  *Las dependencias de Python se instalarán automáticamente la primera vez que ejecutes el programa.*
 
@@ -72,7 +72,7 @@ Puedes enviar tus capítulos directamente al Kindle con la aplicación [SendToKi
 
 #### PDF
 
-En la conversión a PDF algunas imágenes pueden dar el error `Exception: Refusing to work on images with alpha channel`. Para corregir esto se debe eliminar la transparencia de estas imágenes. Puedes añadir la opción `--remove-alpha` para hacerlo automáticamente. Para que funcione debes instalar [Wand + ImageMagick](http://docs.wand-py.org/en/0.6.1/guide/install.html).
+La conversión a PDF no soporta imágenes con transparencia. El programa intentará eliminar la transparencia automáticamente. También puedes añadir la opción `--remove-alpha` para usar [Wand + ImageMagick](https://docs.wand-py.org/en/stable/guide/install.html).
 
 ### 🇪🇸 Uso
 

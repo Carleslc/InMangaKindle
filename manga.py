@@ -475,21 +475,48 @@ def single(single):
   return str(0 if single else 2)
 
 def removeAlpha(image_path):
-  with wand.image.Image(filename=image_path) as img:
-    if img.alpha_channel:
-      img.alpha_channel = 'remove'
-      img.background_color = wand.image.Color('white')    
-      img.save(filename=image_path)
-
-def convert_to_pdf(path, chapters_paths):
-  if not check_exists_file(path):
+  try:
     if args.remove_alpha:
-      print_dim(f'Removing alpha channel from images for {path}')
+      try:
+        # Wand + ImageMagick
+        import wand.image
+        with wand.image.Image(filename=image_path) as img:
+          if img.alpha_channel:
+            img.alpha_channel = 'remove'
+            img.background_color = wand.image.Color('white')    
+            img.save(filename=image_path)
+        return True
+      except:
+        pass
+    from PIL import Image
+    img = Image.open(image_path)
+    if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+      alpha = img.convert("RGBA").split()[-1]
+      new_img = Image.new("RGB", img.size, (255, 255, 255))
+      new_img.paste(img, mask=alpha)
+      new_img.save(image_path, "PNG")
+    return True
+  except:
+    return False
+
+def convert_to_pdf(path_pdf, chapters_paths):
+  if not check_exists_file(path_pdf):
+    import img2pdf
+    def img2pdf_convert():
+      with open(path_pdf, 'wb') as f:
+        f.write(img2pdf.convert(chapters_paths))
+    try:
+      img2pdf_convert()
+    except img2pdf.AlphaChannelError:
+      print_colored('Image transparency detected (alpha channel not supported by PDF). Attempting to remove it automatically...', Fore.YELLOW)
       for img_path in chapters_paths:
         removeAlpha(img_path)
-    with open(path, "wb") as f:
-      f.write(img2pdf.convert(chapters_paths))
-    print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
+      try:
+        img2pdf_convert()
+      except img2pdf.AlphaChannelError:
+        error('Some images have an alpha channel which could not be removed automatically.', 'Try installing ImageMagick (Wand) and use --remove-alpha or use a different --format.\nhttps://docs.wand-py.org/en/stable/guide/install.html')
+    
+    print_colored(f'DONE: {os.path.abspath(path_pdf)}', Fore.GREEN, Style.BRIGHT)
 
 def fix_corrupted_file(corrupted_file, corrupted_file_path, argv):
   print_colored(f'{corrupted_file} is corrupted or missing, removing and trying again... (Cancel with Ctrl+C)', Fore.RED)
@@ -746,9 +773,6 @@ if __name__ == "__main__":
     print_colored(f'Converting to {args.format}...', Fore.BLUE, Style.BRIGHT)
 
     if args.format == 'PDF':
-      import img2pdf
-      if args.remove_alpha:
-        import wand.image
       chapters_paths = []
       for chapter in CHAPTERS:
         chapter_dir = chapter_directory(manga, chapter)

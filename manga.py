@@ -69,7 +69,7 @@ from bs4 import BeautifulSoup
 from colorama import Fore, Style, init as init_console_colors
 
 PROVIDER_WEBSITE = "https://inmanga.com"
-IMAGE_WEBSITE = f"{PROVIDER_WEBSITE}/page/getPageImage/?identification="
+IMAGE_CDN = "https://cdn1.intomanga.com/i/m"
 CHAPTERS_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/getall?mangaIdentification="
 CHAPTER_PAGES_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/chapterIndexControls?identification="
 MANGA_WEBSITE = f"{PROVIDER_WEBSITE}/ver/manga"
@@ -203,11 +203,14 @@ def cancellable():
   except:
     pass
 
-def network_error():
+def network_error(message=None):
+  error_message = 'Network error'
+  if message:
+    error_message = f'{error_message}: {message}'
   tip = 'Are you connected to Internet?'
   if not args.cache:
     tip += '\nYou can use offline mode (using your already downloaded chapters) with --cache'
-  error('Network error', tip)
+  error(error_message, tip)
 
 def success(request, text='', ok=200, print_ok=True):
   if request.status_code == ok:
@@ -245,16 +248,41 @@ def decode(title):
 def plural(size):
   return 's' if size != 1 else ''
 
-def download(filename, url, directory='.', extension='png', text='', ok=200):
+def download(filename, url, directory='.', extension='png', text='', ok=200, referer=None):
   path = encode_path(filename, extension, directory)
+
+  # Check if file already exists
   if os.path.isfile(path):
-    text = text if text else path
-    separation = ' ' * (20 - len(text))
-    print_colored(f'{text}{separation}- Already exists', Fore.YELLOW)
+    if os.path.getsize(path) > 0:
+      text = text if text else path
+      separation = ' ' * (20 - len(text))
+      print_colored(f'{text}{separation}- Already exists', Fore.YELLOW)
+      return False
+    # Empty/corrupted file (download again)
+    os.remove(path)
+
+  headers = {
+    'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Sec-Fetch-Dest': 'image',
+    'Sec-Fetch-Mode': 'no-cors',
+    'Sec-Fetch-Site': 'same-origin',
+    'Upgrade-Insecure-Requests': '1'
+  }
+  if referer:
+    headers['Referer'] = referer
+
+  req = SCRAPER.get(url, headers=headers, allow_redirects=True)
+  data = req.content
+
+  if len(data) == 0:
+    print_colored(f'{text if text else path} - Empty response from server', Fore.RED)
     return False
-  req = SCRAPER.get(url)
+
   if success(req, text, ok, print_ok=bool(text)):
-    data = req.content
     write_file(path, data)
     return True
   return False
@@ -270,6 +298,7 @@ def check_exists_file(path):
     print_colored(f'{path} - Already exists', Fore.YELLOW)
     return True
   return False
+
 def files(dir, extension=''):
   if not os.path.isdir(dir):
     error(f'{dir} does not exist!')
@@ -288,7 +317,7 @@ def folders(dir):
     if os.path.isdir(path):
       yield subdir, path
 
-def copy_all(name_path_list, to_path):
+def copy_all(path_list, to_path):
   import errno, shutil
   def copy(src, dest):
     try:
@@ -298,7 +327,8 @@ def copy_all(name_path_list, to_path):
         shutil.copy(src, dest)
       else:
         error(e)
-  for name, path in name_path_list:
+  for path in path_list:
+    name = os.path.basename(path)
     copy(path, f'{to_path}/{name}')
 
 def load_json(data, *keys):
@@ -462,21 +492,25 @@ def convert_to_pdf(path, chapters_paths):
     print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
 
 def fix_corrupted_file(corrupted_file, corrupted_file_path, argv):
-  print_colored(f'{corrupted_file} is corrupted, removing and trying again... (Cancel with Ctrl+C)', Fore.RED)
-  local_corrupted_file_path = os.path.abspath(f'{directory}/{corrupted_file}')
-  print_dim(local_corrupted_file_path)
-  os.remove(local_corrupted_file_path)
-  if corrupted_file_path != local_corrupted_file_path:
+  print_colored(f'{corrupted_file} is corrupted or missing, removing and trying again... (Cancel with Ctrl+C)', Fore.RED)
+  if os.path.exists(corrupted_file_path):
+    print_dim(corrupted_file_path)
     os.remove(corrupted_file_path)
+  # Remove from manga directory (if corrupted file was in --single temporal directory)
+  local_path = os.path.abspath(f'{directory}/{corrupted_file}')
+  if local_path != corrupted_file_path and os.path.exists(local_path):
+    os.remove(local_path)
+  # Try to convert again without the corrupted file
   cache_convert(argv)
 
 def convert_except(e, argv):
   message = str(e)
-  corrupted_file_path = re.findall(r'Image file (.*?) is corrupted', message)
-  if len(corrupted_file_path) > 0:
-    parts = corrupted_file_path[0].split('/')
+  corrupted_file_match = re.search(r'Image file (.*?) is corrupted', message)
+  if corrupted_file_match:
+    corrupted_file_path = corrupted_file_match.group(1)
+    parts = corrupted_file_path.split('/')
     corrupted_file = f'{parts[-2]}/{parts[-1]}'
-    fix_corrupted_file(corrupted_file, os.path.abspath(corrupted_file_path[0]), argv)
+    fix_corrupted_file(corrupted_file, os.path.abspath(corrupted_file_path), argv)
   elif message.startswith('("One of workers crashed. Cause: \'float\' object cannot be interpreted as an integer"'):
     tip = 'https://github.com/Carleslc/InMangaKindle/issues/13'
     python_supported = is_python_version_supported()
@@ -494,8 +528,41 @@ def cache_convert(argv):
   except Exception as e:
     convert_except(e, argv)
 
-def online_search():
+def validate_chapter_images(chapters, manga, manga_title):
+    def has_images(chapter):
+      chapter_dir = chapter_directory(manga, chapter)
+      if not os.path.isdir(chapter_dir):
+        return False
+      for img in os.listdir(chapter_dir):
+        if img.endswith('.png'):
+          path = os.path.join(chapter_dir, img)
+          if os.path.isfile(path) and os.path.getsize(path) > 0:
+            return True
+      return False
 
+    skip_chapters = []
+    chapters_with_images = []
+
+    for chapter in chapters:
+      include_to = chapters_with_images if has_images(chapter) else skip_chapters
+      include_to.append(chapter)
+
+    if not chapters_with_images:
+      if args.cache:
+        message = 'Please download chapters images first.'
+        tip = 'Try again this command without --cache'
+      else:
+        message = f'This may be due to:\n- Network issues\n- Chapter not available\n- API changes on {PROVIDER_WEBSITE}'
+        tip = f'Try checking the chapter availability on {PROVIDER_WEBSITE} or try again later.'
+      error(f'No images were downloaded. {message}', tip)
+    
+    if skip_chapters:
+      for chapter in skip_chapters:
+        print_colored(f'Skipping {manga_title} {chapter:g} - no images downloaded', Fore.YELLOW)
+    
+    return chapters_with_images
+
+def online_search():
   data = {
     'hfilter[generes][]': '-1',
     'filter[queryString]': MANGA,
@@ -505,7 +572,6 @@ def online_search():
     'filter[broadcastStatus]': '0',
     'filter[onlyFavorites]': 'false'
   }
-
   headers = {
     'Origin': 'https://inmanga.com',
     'Accept-Encoding': 'gzip, deflate',
@@ -519,10 +585,12 @@ def online_search():
 
   try:
     # Alternative Search: https://inmanga.com/OnMangaQuickSearch/Source/QSMangaList.json
-    search = SCRAPER.post(SEARCH_URL, data=data, headers=headers)
+    search = SCRAPER.post(SEARCH_URL, data=data, headers=headers, timeout=30)
     exit_if_fails(search)
+  except requests.exceptions.Timeout:
+    network_error(f'Timeout while searching on {PROVIDER_WEBSITE}')
   except requests.exceptions.ConnectionError:
-    network_error()
+    network_error(f'Connection error while searching on {PROVIDER_WEBSITE}')
 
   return BeautifulSoup(search.content, 'html.parser').find_all("a", href=True, recursive=False)
 
@@ -601,7 +669,7 @@ if __name__ == "__main__":
       chapters_json = SCRAPER.get(CHAPTERS_WEBSITE + manga_uuid)
       exit_if_fails(chapters_json)
     except requests.exceptions.ConnectionError:
-      network_error()
+      network_error(f'Connection error while retrieving chapters from {PROVIDER_WEBSITE}')
     chapters_full = load_json(chapters_json.content, 'data', 'result')
     CHAPTERS_IDS = { float(chapter['Number']): chapter['Identification'] for chapter in chapters_full }
     ALL_CHAPTERS = CHAPTERS_IDS.keys()
@@ -627,7 +695,7 @@ if __name__ == "__main__":
     not_found = 'are not downloaded' if args.cache else 'could not be found'
     print_colored(f'The following chapters {not_found}: {chapters_not_found_intervals}', Fore.RED, Style.BRIGHT)
     if args.cache:
-      error(f'Please download those chapters first.', 'Try again this command without --cache')
+      error('Please download those chapters first.', 'Try again this command without --cache')
     else:
       print_colored('🖐️  Press enter to continue without those chapters or Ctrl+C to abort...', Fore.MAGENTA, Style.BRIGHT, end=' ')
       input()
@@ -641,25 +709,38 @@ if __name__ == "__main__":
     for chapter in CHAPTERS:
       print_colored(f'Downloading {manga_title} {chapter:g}', Fore.YELLOW, Style.BRIGHT)
 
-      url = CHAPTER_PAGES_WEBSITE + CHAPTERS_IDS[chapter]
+      chapter_url = CHAPTER_PAGES_WEBSITE + CHAPTERS_IDS[chapter]
 
       chapter_dir = chapter_directory(manga, chapter)
       try:
-        page = SCRAPER.get(url)
+        page = SCRAPER.get(chapter_url)
 
         if success(page, print_ok=False):
           html = BeautifulSoup(page.content, 'html.parser')
           pages = html.find(id='PageList').find_all(True, recursive=False)
+          
+          chapter_id_input = html.find('input', {'id': 'ChapterIdentification'})
+          chapter_uuid = chapter_id_input.get('value') if chapter_id_input else CHAPTERS_IDS[chapter].lower()
+          
+          chapter_number_input = html.find('input', {'id': 'ChapterNumber'})
+          chapter_number_id = chapter_number_input.get('value') if chapter_number_input else f"{chapter:,}"
+          
+          chapter_viewer_url = f"{MANGA_WEBSITE}/{manga}/{chapter_number_id}/{chapter_uuid}"
+          chapter_url = chapter_viewer_url
+          
+          # Download chapter images
           for page in pages:
             page_id = page.get('value')
             page_number = int(page.get_text())
-            url = IMAGE_WEBSITE + page_id
-            download(page_number, url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)')
+            image_url = f"{IMAGE_CDN}/{manga_uuid}/c/{chapter_uuid}/o/{page_id}.jpg"
+            download(page_number, image_url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)', referer=chapter_viewer_url)
       except requests.exceptions.ConnectionError:
-        network_error()
+        network_error(f'Connection error while downloading chapter images from {chapter_url}')
 
   extension = f'.{args.format.lower()}'
   args.format = args.format.upper()
+
+  CHAPTERS = validate_chapter_images(CHAPTERS, manga, manga_title)
 
   if args.format != 'PNG':
     print_colored(f'Converting to {args.format}...', Fore.BLUE, Style.BRIGHT)
@@ -694,7 +775,8 @@ if __name__ == "__main__":
       if args.single:
         chapter_interval = chapters_to_intervals_string(CHAPTERS)
         with tempfile.TemporaryDirectory() as temp:
-          copy_all([(chapter, chapter_directory(manga, chapter)) for chapter in CHAPTERS], temp)
+          chapters_to_copy = [chapter_directory(manga, chapter) for chapter in CHAPTERS]
+          copy_all(chapters_to_copy, temp)
           title = f'{manga_title} {chapter_interval}'
           print_colored(title, Fore.BLUE)
           argv = argv + ['--title', title, temp] # all chapters in manga directory are packed

@@ -9,6 +9,9 @@ WEBSITE = 'https://carleslc.me/InMangaKindle/'
 SUPPORT_PYTHON = [(3,6,0), (3,14,0)]
 RECOMMENDED_PYTHON = 'https://www.python.org/downloads/latest/python3.13/'
 
+DEFAULT_FORMAT = 'EPUB'
+DEFAULT_PROFILE = 'KPW'
+
 import os
 import re
 import sys
@@ -94,8 +97,9 @@ def set_args():
   parser.add_argument("--directory", help=f"directory to save downloads. Default: {MANGA_DIR}", default=MANGA_DIR)
   parser.add_argument("--single", action='store_true', help="merge all chapters in only one file. If this argument is not provided every chapter will be in a different file")
   parser.add_argument("--rotate", action='store_true', help="rotate double pages. If this argument is not provided double pages will be splitted in 2 different pages")
-  parser.add_argument("--profile", help='Device profile (Available options: K1, K2, K34, K578, KDX, KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD, KoAH2O, KoAO) [Default = KPW (Kindle Paperwhite)]', default='KPW')
-  parser.add_argument("--format", help='Output format (Available options: PNG, PDF, EPUB, MOBI, CBZ) [Default = EPUB]. If PNG is selected then no conversion to e-reader file will be done', default='EPUB')
+  parser.add_argument("--profile", help=f'Device profile (Use --profiles to list available profiles) [Default = {DEFAULT_PROFILE} (Kindle Paperwhite 1/2)]', default=DEFAULT_PROFILE)
+  parser.add_argument("--profiles", action=ListProfiles, help="List available device profiles from Kindle Comic Converter")
+  parser.add_argument("--format", help=f'Output format (Available options: PNG, PDF, EPUB, MOBI, CBZ) [Default = {DEFAULT_FORMAT}]. If PNG is selected then no conversion to e-reader file will be done', default=DEFAULT_FORMAT)
   parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
   parser.add_argument("--cache", action='store_true', help="Avoid downloading chapters and use already downloaded chapters instead (offline)")
   parser.add_argument("--remove-alpha", action='store_true', help="When converting to PDF remove alpha channel on images using ImageMagick Wand")
@@ -107,6 +111,7 @@ class InstallDependencies(argparse.Action):
   def __init__(self, option_strings, **kwargs):
     super(InstallDependencies, self).__init__(option_strings, nargs=0, **kwargs)
   def __call__(self, parser, namespace, values, option_string=None):
+    init_console_colors()
     check_version()
     print_colored("Updating dependencies...", Fore.YELLOW)
     install_dependencies(DEPENDENCIES_FILE, update=True)
@@ -117,10 +122,52 @@ class CheckVersion(argparse.Action):
     super(CheckVersion, self).__init__(option_strings, nargs=0, **kwargs)
     self.version = version
   def __call__(self, parser, namespace, values, option_string=None):
+    init_console_colors()
     print_colored(NAME, Style.BRIGHT, end=' ')
     print_colored(self.version, Style.BRIGHT, Fore.CYAN)
     if check_version():
       print_colored('✅ Up to date', Fore.GREEN)
+    exit()
+
+class ListProfiles(argparse.Action):
+  def __init__(self, option_strings, **kwargs):
+    super(ListProfiles, self).__init__(option_strings, nargs=0, **kwargs)
+  def __call__(self, parser, namespace, values, option_string=None):
+    try:
+      init_console_colors()
+      from kindlecomicconverter.image import ProfileData
+      
+      all_profiles = getattr(ProfileData, 'Profiles', {})
+      kindle_profiles = getattr(ProfileData, 'ProfilesKindle', {})
+      kobo_profiles = getattr(ProfileData, 'ProfilesKobo', {})
+      remarkable_profiles = getattr(ProfileData, 'ProfilesRemarkable', {})
+      other_profiles = {k: v for k, v in all_profiles.items() if k not in kindle_profiles and k not in kobo_profiles and k not in remarkable_profiles}
+      
+      def print_profiles(profiles_dict, category_name):
+        if profiles_dict:
+          print_colored(f'\n{category_name}', Fore.BLUE, Style.BRIGHT)
+          for profile in sorted(profiles_dict.keys()):
+            device_name = profiles_dict[profile][0]
+            print_colored(profile, Fore.CYAN, end='\t')
+            print(device_name)
+
+      print_dim('Available device profiles:')
+      
+      print_profiles(kindle_profiles, 'Kindle')
+      print_profiles(kobo_profiles, 'Kobo')
+      print_profiles(remarkable_profiles, 'Remarkable')
+      print_profiles(other_profiles, 'Other')
+
+      print_colored('\nDefault:', Fore.CYAN, Style.BRIGHT, end=' ')
+      print_colored('--profile', end=' ')
+      print_colored(DEFAULT_PROFILE, Fore.CYAN, Style.BRIGHT)
+
+      print_colored('Usage:', Fore.GREEN, Style.BRIGHT, end=' ')
+      print_colored('python manga.py', end=' ')
+      print_colored('--profile', Fore.CYAN, end=' ')
+      print_colored('KO', Fore.CYAN, Style.BRIGHT)
+    except ImportError:
+      error('Kindle Comic Converter is not installed. Please install dependencies first.', 'Run: python manga.py --update')
     exit()
 
 def check_version():
@@ -188,8 +235,8 @@ def error(message, tip='', halt=True):
 def not_found():
   error(f"Manga '{MANGA}' not found")
 
-def print_dim(s, *colors):
-  print_colored(s, Style.DIM, *colors)
+def print_dim(s, *colors, end='\n'):
+  print_colored(s, Style.DIM, *colors, end=end)
 
 def print_source(html_soup):
   print_dim(html_soup.prettify())
@@ -633,9 +680,6 @@ if __name__ == "__main__":
 
   MANGA_DIR = strip_path(args.directory, DIRECTORY_KEEP)
 
-  if not args.profile:
-    args.profile = 'KPW'
-
   MANGA = ' '.join(args.manga)
 
   check_version()
@@ -790,11 +834,28 @@ if __name__ == "__main__":
     else:
       # CONVERT TO E-READER FORMAT
       from kindlecomicconverter.comic2ebook import main as manga2ebook
+      from kindlecomicconverter.image import ProfileData
+      
+      profiles = getattr(ProfileData, 'Profiles', {})
+      profile_name = profiles[args.profile][0] if args.profile in profiles else None
 
-      argv = ['--output', MANGA_DIR, '-p', args.profile, '--manga-style', '--hq', '-f', args.format, '--batchsplit', single(args.single), '-u', '-r', split_rotate_2_pages(args.rotate)]
+      print_dim('Profile:', end=' ')
+      print_colored(f"{args.profile} ({profile_name})" if profile_name else args.profile, Fore.CYAN)
+
+      # https://github.com/ciromattia/kcc?tab=readme-ov-file#standalone-kcc-c2epy-usage
+      argv = [
+        '--output', MANGA_DIR,
+        '--profile', args.profile,
+        '--format', args.format,
+        '--batchsplit', single(args.single),
+        '--splitter', split_rotate_2_pages(args.rotate),
+        '--manga-style',
+        '--hq',
+        '--upscale',
+      ]
       
       if not args.fullsize:
-        argv.append('-s')
+        argv.append('--stretch')
 
       if args.single:
         chapter_interval = chapters_to_intervals_string(CHAPTERS)

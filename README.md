@@ -108,9 +108,9 @@ parámetros opcionales:
                         cada capítulo se creará en un archivo independiente.
   --rotate              rota las dobles páginas. Si no se proporciona este parámetro,
                         las dobles páginas se dividirán en dos páginas separadas.
-  --profile PROFILE     Dispositivo (Opciones disponibles: K1, K2, K34, K578,
-                        KDX, KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD,
-                        KoAH2O, KoAO) [Por defecto = KPW (Kindle Paperwhite)]
+  --profile PROFILE     Dispositivo (Usa --profiles para ver los perfiles disponibles)
+                        [Por defecto = KPW (Kindle Paperwhite 1/2)]
+  --profiles            Lista los perfiles de dispositivos disponibles en Kindle Comic Converter
   --format FORMAT       Formato de salida (Opciones disponibles: PNG, PDF, EPUB, MOBI, CBZ)
                         [Por defecto = EPUB]. Si se selecciona PNG entonces no se hará ninguna conversión.
   --fullsize            No ajustar el tamaño de las imágenes al perfil del dispositivo
@@ -122,9 +122,11 @@ parámetros opcionales:
 
 #### [¿Qué perfil debo elegir?](https://github.com/ciromattia/kcc/wiki/Profiles)
 
+Ejecuta el comando `python manga.py --profiles` para ver todos los perfiles disponibles para dispositivos Kindle, Kobo y Remarkable.
+
 ### 🇪🇸 Ejemplos
 
-La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Utiliza la opción --profile para cambiar el perfil a tu dispositivo.
+La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Utiliza la opción `--profile` para cambiar el perfil a tu dispositivo.
 
 - `python manga.py "one piece" --chapters 900..last --single` descargará los capítulos desde el 900 hasta el último disponible del manga _One Piece_ y los empaquetará en un único archivo EPUB
 - `python manga.py "one piece" --chapters 900..last --format PDF --single` hace lo mismo que el ejemplo anterior pero en formato PDF para leer en el ordenador
@@ -165,9 +167,9 @@ options:
                         provided every chapter will be in a different file
   --rotate              rotate double pages. If this argument is not provided double
                         pages will be splitted in 2 different pages
-  --profile PROFILE     Device profile (Available options: K1, K2, K34, K578, KDX,
-                        KPW, KV, KO, KoMT, KoG, KoGHD, KoA, KoAHD, KoAH2O, KoAO)
-                        [Default = KPW (Kindle Paperwhite)]
+  --profile PROFILE     Device profile (Use --profiles to list available profiles)
+                        [Default = KPW (Kindle Paperwhite 1/2)]
+  --profiles            List available device profiles from Kindle Comic Converter
   --format FORMAT       Output format (Available options: PNG, PDF, EPUB, MOBI, CBZ)
                         [Default = EPUB]. If PNG is selected then no conversion to
                         e-reader file will be done
@@ -182,9 +184,11 @@ options:
 
 #### [Which profile should I choose?](https://github.com/ciromattia/kcc/wiki/Profiles)
 
+Run the command `python manga.py --profiles` to see all available profiles for Kindle, Kobo, and Remarkable devices.
+
 ### 🇬🇧 Examples
 
-Default screen resolution is for Kindle Paperwhite device profile. Use option --profile to change the profile to your device.
+Default screen resolution is for Kindle Paperwhite device profile. Use option `--profile` to change the profile to your device.
 
 - `python manga.py "one piece" --chapters 900..last --single` will download _One Piece_ chapters from 900 to the last chapter available and pack them into one single EPUB file
 - `python manga.py "one piece" --chapters 900..last --format PDF --single` will result in the same as above but in PDF instead EPUB

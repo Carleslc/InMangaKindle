@@ -101,6 +101,7 @@ def set_args():
   parser.add_argument("--profiles", action=ListProfiles, help="List available device profiles from Kindle Comic Converter")
   parser.add_argument("--format", help=f'Output format (Available options: PNG, PDF, EPUB, MOBI, CBZ) [Default = {DEFAULT_FORMAT}]. If PNG is selected then no conversion to e-reader file will be done', default=DEFAULT_FORMAT)
   parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
+  parser.add_argument("--color", action='store_true', help="Don't convert images to grayscale")
   parser.add_argument("--cache", action='store_true', help="Avoid downloading chapters and use already downloaded chapters instead (offline)")
   parser.add_argument("--remove-alpha", action='store_true', help="When converting to PDF remove alpha channel on images using ImageMagick Wand")
   parser.add_argument("--update", action=InstallDependencies, help="Update dependencies to the latest version")
@@ -856,6 +857,9 @@ if __name__ == "__main__":
       
       if not args.fullsize:
         argv.append('--stretch')
+      
+      if args.color:
+        argv.append('--forcecolor')
 
       if args.single:
         chapter_interval = chapters_to_intervals_string(CHAPTERS)

@@ -111,7 +111,7 @@ parámetros opcionales:
   --profile PROFILE     Dispositivo (Usa --profiles para ver los perfiles disponibles)
                         [Por defecto = KPW (Kindle Paperwhite 1/2)]
   --profiles            Lista los perfiles de dispositivos disponibles en Kindle Comic Converter
-  --format FORMAT       Formato de salida (Opciones disponibles: PNG, PDF, EPUB, MOBI, CBZ)
+  --format FORMAT       Formato de salida (Opciones disponibles: PNG, PDF, EPUB, MOBI, CBZ, KFX, MOBI+EPUB)
                         [Por defecto = EPUB]. Si se selecciona PNG entonces no se hará ninguna conversión.
   --fullsize            No ajustar el tamaño de las imágenes al perfil del dispositivo
   --color               No convertir las imágenes a escala de grises
@@ -176,7 +176,7 @@ options:
   --profile PROFILE     Device profile (Use --profiles to list available profiles)
                         [Default = KPW (Kindle Paperwhite 1/2)]
   --profiles            List available device profiles from Kindle Comic Converter
-  --format FORMAT       Output format (Available options: PNG, PDF, EPUB, MOBI, CBZ)
+  --format FORMAT       Output format (Available options: PNG, PDF, EPUB, MOBI, CBZ, KFX, MOBI+EPUB)
                         [Default = EPUB]. If PNG is selected then no conversion to
                         e-reader file will be done
   --fullsize            Do not stretch images to the profile's device resolution

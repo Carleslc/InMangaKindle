@@ -9,6 +9,7 @@ WEBSITE = 'https://carleslc.me/InMangaKindle/'
 SUPPORT_PYTHON = [(3,6,0), (3,14,0)]
 RECOMMENDED_PYTHON = 'https://www.python.org/downloads/latest/python3.13/'
 
+FORMATS = ['PNG', 'PDF', 'EPUB', 'MOBI', 'CBZ', 'KFX', 'MOBI+EPUB']
 DEFAULT_FORMAT = 'EPUB'
 DEFAULT_PROFILE = 'KPW'
 
@@ -99,7 +100,7 @@ def set_args():
   parser.add_argument("--rotate", action='store_true', help="rotate double pages. If this argument is not provided double pages will be splitted in 2 different pages")
   parser.add_argument("--profile", help=f'Device profile (Use --profiles to list available profiles) [Default = {DEFAULT_PROFILE} (Kindle Paperwhite 1/2)]', default=DEFAULT_PROFILE)
   parser.add_argument("--profiles", action=ListProfiles, help="List available device profiles from Kindle Comic Converter")
-  parser.add_argument("--format", help=f'Output format (Available options: PNG, PDF, EPUB, MOBI, CBZ) [Default = {DEFAULT_FORMAT}]. If PNG is selected then no conversion to e-reader file will be done', default=DEFAULT_FORMAT)
+  parser.add_argument("--format", help=f'Output format (Available options: {', '.join(FORMATS)}) [Default = {DEFAULT_FORMAT}]. If PNG is selected then no conversion to e-reader file will be done', default=DEFAULT_FORMAT)
   parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
   parser.add_argument("--color", action='store_true', help="Don't convert images to grayscale")
   parser.add_argument("--cache", action='store_true', help="Avoid downloading chapters and use already downloaded chapters instead (offline)")
@@ -159,7 +160,7 @@ class ListProfiles(argparse.Action):
       
       print_profiles(kindle_profiles, 'Kindle')
       print_profiles(kobo_profiles, 'Kobo')
-      print_profiles(remarkable_profiles, 'Remarkable')
+      print_profiles(remarkable_profiles, 'reMarkable')
       print_profiles(other_profiles, 'Other')
 
       print_colored('\nDefault:', Fore.CYAN, Style.BRIGHT, end=' ')
@@ -289,7 +290,7 @@ def strip_path(path, keep):
   return ''.join(c for c in path if c.isalnum() or c in keep).strip()
 
 def encode_path(filename, extension, directory='.'):
-  return strip_path(f'{directory}/{filename}', DIRECTORY_KEEP) + '.' + strip_path(extension, EXTENSION_KEEP)
+  return strip_path(os.path.join(directory, filename), DIRECTORY_KEEP) + '.' + strip_path(extension, EXTENSION_KEEP)
 
 def encode(title):
   return re.sub(r'\W+', '-', title)
@@ -340,10 +341,29 @@ def download(filename, url, directory='.', extension='png', text='', ok=200, ref
   return False
 
 def manga_directory(manga):
-  return f'{MANGA_DIR}/{manga}'
+  return os.path.join(MANGA_DIR, manga)
 
 def chapter_directory(manga, chapter):
-  return f'{manga_directory(manga)}/{chapter:g}'
+  return os.path.join(MANGA_DIR, manga, f'{chapter:g}')
+
+def output_filename_path(title='', chapter_interval=None, extension=None):
+  if isinstance(chapter_interval, float):
+    chapter_interval = f'{chapter_interval:g}'
+  elif isinstance(chapter_interval, list):
+    chapter_interval = chapters_to_intervals_string(chapter_interval)
+  filename = title
+  if chapter_interval is not None:
+    filename += f' {chapter_interval}' if title else chapter_interval
+  extension = '.' + extension if extension else ''
+  path = os.path.join(MANGA_DIR, filename + extension)
+  return filename, path
+
+def output_path(title='', chapter_interval=None, extension=None):
+  _, path = output_filename_path(title, chapter_interval, extension)
+  return path
+
+def done(path):
+  print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
 
 def check_exists_file(path):
   if os.path.isfile(path):
@@ -357,7 +377,7 @@ def files(dir, extension=''):
   def filename(file):
     return file.split('.')[-2]
   for file in os.listdir(dir):
-    path = os.path.abspath(f'{dir}/{file}')
+    path = os.path.abspath(os.path.join(dir, file))
     if os.path.isfile(path) and file.endswith(extension):
       yield filename(file), path
 
@@ -365,7 +385,7 @@ def folders(dir):
   if not os.path.isdir(dir):
     error(f'{dir} does not exist');
   for subdir in os.listdir(dir):
-    path = os.path.abspath(f'{dir}/{subdir}')
+    path = os.path.abspath(os.path.join(dir, subdir))
     if os.path.isdir(path):
       yield subdir, path
 
@@ -381,7 +401,7 @@ def copy_all(path_list, to_path):
         error(e)
   for path in path_list:
     name = os.path.basename(path)
-    copy(path, f'{to_path}/{name}')
+    copy(path, os.path.join(to_path, name))
 
 def load_json(data, *keys):
   data = json.loads(data)
@@ -526,6 +546,48 @@ def split_rotate_2_pages(rotate):
 def single(single):
   return str(0 if single else 2)
 
+def format_extension(format):
+  if format == 'KFX':
+    # https://github.com/ciromattia/kcc/blob/v9.4.1/kindlecomicconverter/comic2ebook.py#L1466
+    return 'epub'
+  elif format == 'MOBI+EPUB':
+    return 'mobi'
+  return format.lower()
+
+def validate_chapter_images(chapters, manga, manga_title):
+    def has_images(chapter):
+      chapter_dir = chapter_directory(manga, chapter)
+      if not os.path.isdir(chapter_dir):
+        return False
+      for img in os.listdir(chapter_dir):
+        if img.endswith('.png'):
+          path = os.path.join(chapter_dir, img)
+          if os.path.isfile(path) and os.path.getsize(path) > 0:
+            return True
+      return False
+
+    skip_chapters = []
+    chapters_with_images = []
+
+    for chapter in chapters:
+      include_to = chapters_with_images if has_images(chapter) else skip_chapters
+      include_to.append(chapter)
+
+    if not chapters_with_images:
+      if args.cache:
+        message = 'Please download chapters images first.'
+        tip = 'Try again this command without --cache'
+      else:
+        message = f'This may be due to:\n- Network issues\n- Chapter not available\n- API changes on {PROVIDER_WEBSITE}'
+        tip = f'Try checking the chapter availability on {PROVIDER_WEBSITE} or try again later.'
+      error(f'No images were downloaded. {message}', tip)
+    
+    if skip_chapters:
+      for chapter in skip_chapters:
+        print_colored(f'Skipping {manga_title} {chapter:g} - no images downloaded', Fore.YELLOW)
+    
+    return chapters_with_images
+
 def removeAlpha(image_path):
   try:
     if args.remove_alpha:
@@ -551,12 +613,13 @@ def removeAlpha(image_path):
   except:
     return False
 
-def convert_to_pdf(path_pdf, chapters_paths):
+def convert_to_pdf(title, path_pdf, chapters_paths):
   if not check_exists_file(path_pdf):
     import img2pdf
     def img2pdf_convert():
       with open(path_pdf, 'wb') as f:
         f.write(img2pdf.convert(chapters_paths))
+    print_colored(title, Fore.BLUE)
     try:
       img2pdf_convert()
     except img2pdf.AlphaChannelError:
@@ -567,8 +630,7 @@ def convert_to_pdf(path_pdf, chapters_paths):
         img2pdf_convert()
       except img2pdf.AlphaChannelError:
         error('Some images have an alpha channel which could not be removed automatically.', 'Try installing ImageMagick (Wand) and use --remove-alpha or use a different --format.\nhttps://docs.wand-py.org/en/stable/guide/install.html')
-    
-    print_colored(f'DONE: {os.path.abspath(path_pdf)}', Fore.GREEN, Style.BRIGHT)
+    done(path_pdf)
 
 def fix_corrupted_file(corrupted_file, corrupted_file_path, argv):
   print_colored(f'{corrupted_file} is corrupted or missing, removing and trying again... (Cancel with Ctrl+C)', Fore.RED)
@@ -606,40 +668,6 @@ def cache_convert(argv):
     manga2ebook(argv)
   except Exception as e:
     convert_except(e, argv)
-
-def validate_chapter_images(chapters, manga, manga_title):
-    def has_images(chapter):
-      chapter_dir = chapter_directory(manga, chapter)
-      if not os.path.isdir(chapter_dir):
-        return False
-      for img in os.listdir(chapter_dir):
-        if img.endswith('.png'):
-          path = os.path.join(chapter_dir, img)
-          if os.path.isfile(path) and os.path.getsize(path) > 0:
-            return True
-      return False
-
-    skip_chapters = []
-    chapters_with_images = []
-
-    for chapter in chapters:
-      include_to = chapters_with_images if has_images(chapter) else skip_chapters
-      include_to.append(chapter)
-
-    if not chapters_with_images:
-      if args.cache:
-        message = 'Please download chapters images first.'
-        tip = 'Try again this command without --cache'
-      else:
-        message = f'This may be due to:\n- Network issues\n- Chapter not available\n- API changes on {PROVIDER_WEBSITE}'
-        tip = f'Try checking the chapter availability on {PROVIDER_WEBSITE} or try again later.'
-      error(f'No images were downloaded. {message}', tip)
-    
-    if skip_chapters:
-      for chapter in skip_chapters:
-        print_colored(f'Skipping {manga_title} {chapter:g} - no images downloaded', Fore.YELLOW)
-    
-    return chapters_with_images
 
 def online_search():
   data = {
@@ -806,16 +834,23 @@ if __name__ == "__main__":
           print_dim(chapter_url)
           
           # Download chapter images
+          i = 1
           for page in pages:
             page_id = page.get('value')
-            page_number = int(page.get_text())
+            page_number = page.get_text()
             image_url = f"{IMAGE_CDN}/{manga_uuid}/c/{chapter_uuid}/o/{page_id}.jpg"
-            download(page_number, image_url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)', referer=chapter_url)
+            download(page_number, image_url, chapter_dir, text=f'Page {i}/{len(pages)} ({100*i//len(pages)}%)', referer=chapter_url)
+            i += 1
       except requests.exceptions.ConnectionError:
         network_error(f'Connection error while downloading chapter images from {chapter_url}')
 
-  extension = f'.{args.format.lower()}'
   args.format = args.format.upper()
+
+  if args.format not in FORMATS:
+    error(f'Invalid format: {args.format}', f"Available formats: {', '.join(FORMATS)}", halt=False)
+    args.format = DEFAULT_FORMAT
+
+  extension = format_extension(args.format)
 
   CHAPTERS = validate_chapter_images(CHAPTERS, manga, manga_title)
 
@@ -823,6 +858,7 @@ if __name__ == "__main__":
     print_colored(f'Converting to {args.format}...', Fore.BLUE, Style.BRIGHT)
 
     if args.format == 'PDF':
+      # CONVERT TO PDF
       chapters_paths = []
       for chapter in CHAPTERS:
         chapter_dir = chapter_directory(manga, chapter)
@@ -831,22 +867,30 @@ if __name__ == "__main__":
         if args.single:
           chapters_paths.extend(page_paths)
         else:
-          path = f'{MANGA_DIR}/{manga_title} {chapter:g}{extension}'
-          convert_to_pdf(path, page_paths)
+          title, path = output_filename_path(manga_title, chapter, extension)
+          convert_to_pdf(title, path, page_paths)
       if args.single:
-        chapter_interval = chapters_to_intervals_string(CHAPTERS)
-        path = f'{MANGA_DIR}/{manga_title} {chapter_interval}{extension}'
-        convert_to_pdf(path, chapters_paths)
+        title, path = output_filename_path(manga_title, CHAPTERS, extension)
+        convert_to_pdf(title, path, chapters_paths)
     else:
       # CONVERT TO E-READER FORMAT
       from kindlecomicconverter.comic2ebook import main as manga2ebook
       from kindlecomicconverter.image import ProfileData
+
+      if args.format == 'KFX':
+        print_colored('KFX output creates EPUB that can be converted to KFX by jhowell KFX Output Calibre plugin', Fore.YELLOW)
+        print_dim('https://www.mobileread.com/forums/showthread.php?t=272407')
       
       profiles = getattr(ProfileData, 'Profiles', {})
-      profile_name = profiles[args.profile][0] if args.profile in profiles else None
+
+      if args.profile not in profiles:
+        error(f'Invalid device profile: {args.profile}', 'Use --profiles to list available profiles', halt=False)
+        args.profile = DEFAULT_PROFILE
+
+      profile_name = profiles[args.profile][0]
 
       print_dim('Profile:', end=' ')
-      print_colored(f"{args.profile} ({profile_name})" if profile_name else args.profile, Fore.CYAN)
+      print_colored(f"{args.profile} ({profile_name})", Fore.CYAN)
 
       # https://github.com/ciromattia/kcc?tab=readme-ov-file#standalone-kcc-c2epy-usage
       argv = [
@@ -866,31 +910,30 @@ if __name__ == "__main__":
       if args.color:
         argv.append('--forcecolor')
 
+      def convert_to_ereader(title, path, src_chapter, src_dir):
+        print_colored(title, Fore.BLUE)
+        argv_convert = argv + ['--title', title, src_dir]
+        cache_convert(argv_convert)
+        os.rename(output_path(chapter_interval=src_chapter, extension=extension), path)
+        if args.format == 'MOBI+EPUB':
+          path_epub = output_path(title, extension='epub')
+          os.rename(output_path(chapter_interval=src_chapter, extension='epub'), path_epub)
+          done(path_epub)
+        done(path)
+
       if args.single:
-        chapter_interval = chapters_to_intervals_string(CHAPTERS)
+        title, path = output_filename_path(manga_title, CHAPTERS, extension)
         with tempfile.TemporaryDirectory() as temp:
           chapters_to_copy = [chapter_directory(manga, chapter) for chapter in CHAPTERS]
-          copy_all(chapters_to_copy, temp)
-          title = f'{manga_title} {chapter_interval}'
-          print_colored(title, Fore.BLUE)
-          argv = argv + ['--title', title, temp] # all chapters in manga directory are packed
-          cache_convert(argv)
-          path = f'{MANGA_DIR}/{manga_title} {chapter_interval}{extension}'
-          os.rename(f'{MANGA_DIR}/{os.path.basename(temp)}{extension}', path)
-          print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
+          copy_all(chapters_to_copy, temp) # all chapters in temp directory are packed
+          convert_to_ereader(title, path, os.path.basename(temp), temp)
       else:
         for chapter in CHAPTERS:
-          title = f'{manga_title} {chapter:g}'
-          print_colored(title, Fore.BLUE)
-          argv_chapter = argv + ['--title', title, chapter_directory(manga, chapter)]
-          cache_convert(argv_chapter)
-          path = f'{MANGA_DIR}/{manga_title} {chapter:g}{extension}'
-          os.rename(f'{MANGA_DIR}/{chapter:g}{extension}', path)
-          print_colored(f'DONE: {os.path.abspath(path)}', Fore.GREEN, Style.BRIGHT)
+          title, path = output_filename_path(manga_title, chapter, extension)
+          convert_to_ereader(title, path, chapter, chapter_directory(manga, chapter))
   else:
+    # PNG (no conversion)
     if len(CHAPTERS) == 1:
-      directory = os.path.abspath(chapter_directory(manga, CHAPTERS[0]))
-      chapter_intervals_info = ''
+      done(chapter_directory(manga, CHAPTERS[0]))
     else:
-      chapter_intervals_info = f" ({chapters_to_intervals_string(CHAPTERS, interval_sep=', ')})"
-    print_colored(f'DONE: {directory}{chapter_intervals_info}', Fore.GREEN, Style.BRIGHT)
+      done(f"{manga_directory(manga)} ({chapters_to_intervals_string(CHAPTERS, interval_sep=', ')})")

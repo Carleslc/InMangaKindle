@@ -114,6 +114,7 @@ parámetros opcionales:
   --format FORMAT       Formato de salida (Opciones disponibles: PNG, PDF, EPUB, MOBI, CBZ)
                         [Por defecto = EPUB]. Si se selecciona PNG entonces no se hará ninguna conversión.
   --fullsize            No ajustar el tamaño de las imágenes al perfil del dispositivo
+  --color               No convertir las imágenes a escala de grises
   --cache               Utiliza las imágenes en local sin descargar ningún capítulo (modo sin conexión)
   --remove-alpha        Elimina el canal alpha de las imagenes en la conversión a PDF usando ImageMagick
   --update              Actualiza las dependencias del programa a la última versión
@@ -174,6 +175,7 @@ options:
                         [Default = EPUB]. If PNG is selected then no conversion to
                         e-reader file will be done
   --fullsize            Do not stretch images to the profile's device resolution
+  --color               Don't convert images to grayscale
   --cache               Avoid downloading chapters and use already downloaded
                         chapters instead (offline)
   --remove-alpha        When converting to PDF remove alpha channel on images using

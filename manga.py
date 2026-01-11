@@ -894,6 +894,7 @@ if __name__ == "__main__":
 
       # https://github.com/ciromattia/kcc?tab=readme-ov-file#standalone-kcc-c2epy-usage
       argv = [
+        '--author', NAME,
         '--output', MANGA_DIR,
         '--profile', args.profile,
         '--format', args.format,

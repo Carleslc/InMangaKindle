@@ -100,11 +100,11 @@ def set_args():
   parser.add_argument("--rotate", action='store_true', help="rotate double pages. If this argument is not provided double pages will be splitted in 2 different pages")
   parser.add_argument("--profile", help=f'Device profile (Use --profiles to list available profiles) [Default = {DEFAULT_PROFILE} (Kindle Paperwhite 1/2)]', default=DEFAULT_PROFILE)
   parser.add_argument("--profiles", action=ListProfiles, help="List available device profiles from Kindle Comic Converter")
-  parser.add_argument("--format", help=f'Output format (Available options: {', '.join(FORMATS)}) [Default = {DEFAULT_FORMAT}]. If PNG is selected then no conversion to e-reader file will be done', default=DEFAULT_FORMAT)
+  parser.add_argument("--format", help=f"Output format (Available options: {', '.join(FORMATS)}) [Default = {DEFAULT_FORMAT}]. If PNG is selected then no conversion to e-reader file will be done", default=DEFAULT_FORMAT)
   parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
   parser.add_argument("--color", action='store_true', help="Don't convert images to grayscale")
   parser.add_argument("--cache", action='store_true', help="Avoid downloading chapters and use already downloaded chapters instead (offline)")
-  parser.add_argument("--remove-alpha", action='store_true', help="When converting to PDF remove alpha channel on images using ImageMagick Wand")
+  parser.add_argument("--remove-alpha", action='store_true', help="Remove images transparency (alpha channel)")
   parser.add_argument("--update", action=InstallDependencies, help="Update dependencies to the latest version")
   parser.add_argument("--version", "-v", action=CheckVersion, help="Display current InMangaKindle version", version=VERSION)
   args = parser.parse_args()
@@ -590,46 +590,47 @@ def validate_chapter_images(chapters, manga, manga_title):
 
 def removeAlpha(image_path):
   try:
-    if args.remove_alpha:
-      try:
-        # Wand + ImageMagick
-        import wand.image
-        with wand.image.Image(filename=image_path) as img:
-          if img.alpha_channel:
-            img.alpha_channel = 'remove'
-            img.background_color = wand.image.Color('white')    
-            img.save(filename=image_path)
-        return True
-      except:
-        pass
+    # Pillow
     from PIL import Image
-    img = Image.open(image_path)
-    if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
-      alpha = img.convert("RGBA").split()[-1]
-      new_img = Image.new("RGB", img.size, (255, 255, 255))
-      new_img.paste(img, mask=alpha)
-      new_img.save(image_path, "PNG")
+    with Image.open(image_path) as img:
+      if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+        img_rgba = img.convert("RGBA")
+        alpha = img_rgba.split()[-1]
+        new_img = Image.new("RGB", img_rgba.size, (255, 255, 255))
+        new_img.paste(img_rgba, mask=alpha)
+        new_img.save(image_path, "PNG")
     return True
   except:
-    return False
+    try:
+      # Wand + ImageMagick
+      # https://docs.wand-py.org/en/stable/guide/install.html
+      import wand.image
+      with wand.image.Image(filename=image_path) as img:
+        if img.alpha_channel:
+          img.alpha_channel = 'remove'
+          img.background_color = wand.image.Color('white')    
+          img.save(filename=image_path)
+      return True
+    except:
+      return False
 
-def convert_to_pdf(title, path_pdf, chapters_paths):
+def convert_to_pdf(title, path_pdf, pages_paths):
   if not check_exists_file(path_pdf):
     import img2pdf
     def img2pdf_convert():
       with open(path_pdf, 'wb') as f:
-        f.write(img2pdf.convert(chapters_paths))
+        f.write(img2pdf.convert(pages_paths))
     print_colored(title, Fore.BLUE)
     try:
       img2pdf_convert()
     except img2pdf.AlphaChannelError:
-      print_colored('Image transparency detected (alpha channel not supported by PDF). Attempting to remove it automatically...', Fore.YELLOW)
-      for img_path in chapters_paths:
+      print_colored('Image transparency detected (not supported by PDF). Attempting to remove alpha channel automatically...', Fore.YELLOW)
+      for img_path in pages_paths:
         removeAlpha(img_path)
       try:
         img2pdf_convert()
       except img2pdf.AlphaChannelError:
-        error('Some images have an alpha channel which could not be removed automatically.', 'Try installing ImageMagick (Wand) and use --remove-alpha or use a different --format.\nhttps://docs.wand-py.org/en/stable/guide/install.html')
+        error('Some images have an alpha channel which could not be removed automatically.', 'Try installing ImageMagick (Wand) or use a different --format.\nhttps://docs.wand-py.org/en/stable/guide/install.html')
     done(path_pdf)
 
 def fix_corrupted_file(corrupted_file, corrupted_file_path, argv):
@@ -854,24 +855,35 @@ if __name__ == "__main__":
 
   CHAPTERS = validate_chapter_images(CHAPTERS, manga, manga_title)
 
+  chapters_image_paths = {}
+
+  if args.remove_alpha or args.format == 'PDF':
+    for chapter in CHAPTERS:
+      chapter_dir = chapter_directory(manga, chapter)
+      page_number_paths = sorted(list(files(chapter_dir, 'png')), key=lambda page_path: int(page_path[0]))
+      page_paths = list(map(lambda page_path: page_path[1], page_number_paths))
+      chapters_image_paths[chapter] = page_paths
+
+  if args.remove_alpha:
+    print_colored('Removing transparency from images...', Fore.YELLOW)
+    for chapter in CHAPTERS:
+      for img_path in chapters_image_paths[chapter]:
+        removeAlpha(img_path)
+
   if args.format != 'PNG':
     print_colored(f'Converting to {args.format}...', Fore.BLUE, Style.BRIGHT)
 
     if args.format == 'PDF':
       # CONVERT TO PDF
-      chapters_paths = []
-      for chapter in CHAPTERS:
-        chapter_dir = chapter_directory(manga, chapter)
-        page_number_paths = sorted(list(files(chapter_dir, 'png')), key=lambda page_path: int(page_path[0]))
-        page_paths = list(map(lambda page_path: page_path[1], page_number_paths))
-        if args.single:
-          chapters_paths.extend(page_paths)
-        else:
-          title, path = output_filename_path(manga_title, chapter, extension)
-          convert_to_pdf(title, path, page_paths)
       if args.single:
+        all_pages_paths = [pages_paths for chapter in CHAPTERS for pages_paths in chapters_image_paths[chapter]]
         title, path = output_filename_path(manga_title, CHAPTERS, extension)
-        convert_to_pdf(title, path, chapters_paths)
+        convert_to_pdf(title, path, all_pages_paths)
+      else:
+        for chapter in CHAPTERS:
+          pages_paths = chapters_image_paths[chapter]
+          title, path = output_filename_path(manga_title, chapter, extension)
+          convert_to_pdf(title, path, pages_paths)
     else:
       # CONVERT TO E-READER FORMAT
       from kindlecomicconverter.comic2ebook import main as manga2ebook

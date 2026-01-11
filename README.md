@@ -70,10 +70,6 @@ Si no quieres descargar Kindle Previewer puedes descargar el binario `kindlegen`
 
 Puedes enviar tus capítulos directamente al Kindle con la aplicación [SendToKindle](https://www.amazon.com/gp/sendtokindle).
 
-#### PDF
-
-La conversión a PDF no soporta imágenes con transparencia. El programa intentará eliminar la transparencia automáticamente. También puedes añadir la opción `--remove-alpha` para usar [Wand + ImageMagick](https://docs.wand-py.org/en/stable/guide/install.html).
-
 ### 🇪🇸 Uso
 
 **[Tutorial en vídeo](https://www.youtube.com/watch?v=X6l1zvu6mfo)**
@@ -116,7 +112,7 @@ parámetros opcionales:
   --fullsize            No ajustar el tamaño de las imágenes al perfil del dispositivo
   --color               No convertir las imágenes a escala de grises
   --cache               Utiliza las imágenes en local sin descargar ningún capítulo (modo sin conexión)
-  --remove-alpha        Elimina el canal alpha de las imagenes en la conversión a PDF usando ImageMagick
+  --remove-alpha        Elimina la transparencia de las imágenes (canal alfa)
   --update              Actualiza las dependencias del programa a la última versión
   --version, -v         Muestra la versión actual de InMangaKindle
 ```
@@ -139,6 +135,12 @@ La resolución de pantalla por defecto está ajustada para Kindle Paperwhite. Ut
 - `python manga.py "one piece" --chapter 1170 --color` descargará el capítulo 1170 de _One Piece_ en un archivo EPUB con páginas a color
 - `python manga.py "one piece" --chapter last --format EPUB --profile KO` descargará el último capítulo de _One Piece_ en un archivo EPUB adaptado para la resolución del dispositivo Kindle Paperwhite 12 o Kindle Oasis 2/3
 - `python manga.py "one piece" --chapter last --format MOBI --profile KCS --color` descargará el último capítulo de _One Piece_ en un archivo MOBI adaptado para el dispositivo Kindle Colorsoft con páginas a color
+
+### PDF
+
+La conversión a PDF puede no ser compatible con las imágenes con transparencia. El programa intentará eliminar la transparencia automáticamente en caso de encontrar problemas de compatibilidad.
+
+También puedes añadir la opción `--remove-alpha` de forma explícita en caso de encontrar algún problema con la transparencia (canal alfa) durante la conversión a PDF o EPUB.
 
 ### 🇬🇧 Usage
 
@@ -183,8 +185,7 @@ options:
   --color               Don't convert images to grayscale
   --cache               Avoid downloading chapters and use already downloaded
                         chapters instead (offline)
-  --remove-alpha        When converting to PDF remove alpha channel on images using
-                        ImageMagick Wand
+  --remove-alpha        Remove images transparency (alpha channel)
   --update              Update dependencies to the latest version
   --version, -v         Display current InMangaKindle version
 ```

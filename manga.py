@@ -57,7 +57,7 @@ def install_dependencies(dependencies_file, update=False):
   try:
     install_command = [sys.executable, "-m", "pip", "install"]
     if update:
-      install_command.append("--upgrade")
+      install_command.extend(["--upgrade", "--force-reinstall", "--no-deps"])
     install_command.append("-r")
     install_command.append(dependencies_file)
     subprocess.check_call(install_command)
@@ -114,9 +114,12 @@ class InstallDependencies(argparse.Action):
   def __call__(self, parser, namespace, values, option_string=None):
     init_console_colors()
     check_version()
-    print_colored("Updating dependencies...", Fore.YELLOW)
-    install_dependencies(DEPENDENCIES_FILE, update=True)
+    update_dependencies()
     exit()
+
+def update_dependencies():
+  print_colored("Updating dependencies...", Fore.YELLOW)
+  install_dependencies(DEPENDENCIES_FILE, update=True)
 
 class CheckVersion(argparse.Action):
   def __init__(self, option_strings, version=VERSION, **kwargs):
@@ -197,6 +200,7 @@ def check_version():
             subprocess.check_call(['git', 'checkout', latest_version])
             print_colored('Updated to the latest version', Fore.GREEN, end=' ')
             print_colored(latest_version, Style.BRIGHT, Fore.CYAN)
+            update_dependencies()
             print_colored(f'Run {NAME} again to use the latest version', Fore.YELLOW, Style.BRIGHT)
             exit()
         except subprocess.CalledProcessError as e:
@@ -797,15 +801,16 @@ if __name__ == "__main__":
           chapter_number_input = html.find('input', {'id': 'ChapterNumber'})
           chapter_number_id = chapter_number_input.get('value') if chapter_number_input else f"{chapter:,}"
           
-          chapter_viewer_url = f"{MANGA_WEBSITE}/{manga}/{chapter_number_id}/{chapter_uuid}"
-          chapter_url = chapter_viewer_url
+          chapter_url = f"{MANGA_WEBSITE}/{manga}/{chapter_number_id}/{chapter_uuid}"
+
+          print_dim(chapter_url)
           
           # Download chapter images
           for page in pages:
             page_id = page.get('value')
             page_number = int(page.get_text())
             image_url = f"{IMAGE_CDN}/{manga_uuid}/c/{chapter_uuid}/o/{page_id}.jpg"
-            download(page_number, image_url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)', referer=chapter_viewer_url)
+            download(page_number, image_url, chapter_dir, text=f'Page {page_number}/{len(pages)} ({100*page_number//len(pages)}%)', referer=chapter_url)
       except requests.exceptions.ConnectionError:
         network_error(f'Connection error while downloading chapter images from {chapter_url}')
 

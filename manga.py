@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-VERSION = '1.7'
+VERSION = '1.8'
 
 NAME = 'InMangaKindle'
 WEBSITE = 'https://carleslc.me/InMangaKindle/'
@@ -82,8 +82,10 @@ SEARCH_URL = "https://inmanga.com/manga/getMangasConsultResult"
 
 MANGA_DIR = './manga'
 
+PATH_SEPARATORS = set(['/', '\\'])
+
 FILENAME_KEEP = set(['_', '-', ' ', '.'])
-DIRECTORY_KEEP = FILENAME_KEEP | set(['/'])
+DIRECTORY_KEEP = FILENAME_KEEP | PATH_SEPARATORS
 EXTENSION_KEEP = set('.')
 
 SCRAPER = cloudscraper.create_scraper()
@@ -286,11 +288,20 @@ def write_file(path, data):
   with open(path, 'wb') as handler:
     handler.write(data)
 
-def strip_path(path, keep):
-  return ''.join(c for c in path if c.isalnum() or c in keep).strip()
+def strip_name(name, keep=FILENAME_KEEP):
+  return ''.join(c for c in name if c.isalnum() or c in keep).strip()
+
+def strip_path(path, keep=DIRECTORY_KEEP):
+  # Sanitize every path component separately, preserving path separators and the drive (Windows: C:\)
+  # Both '/' and '\' are treated as separators, so os.path.join results are handled correctly on POSIX and Windows
+  keep = set(keep) - PATH_SEPARATORS
+  drive, tail = os.path.splitdrive(path)
+  parts = re.split(r'[\\/]', tail)
+  parts = [part if part in ('', os.curdir, os.pardir) else strip_name(part, keep) for part in parts]
+  return drive + os.sep.join(parts)
 
 def encode_path(filename, extension, directory='.'):
-  return strip_path(os.path.join(directory, filename), DIRECTORY_KEEP) + '.' + strip_path(extension, EXTENSION_KEEP)
+  return strip_path(os.path.join(directory, filename), DIRECTORY_KEEP) + '.' + strip_name(extension, EXTENSION_KEEP)
 
 def encode(title):
   return re.sub(r'\W+', '-', title)
@@ -639,7 +650,7 @@ def fix_corrupted_file(corrupted_file, corrupted_file_path, argv):
     print_dim(corrupted_file_path)
     os.remove(corrupted_file_path)
   # Remove from manga directory (if corrupted file was in --single temporal directory)
-  local_path = os.path.abspath(f'{directory}/{corrupted_file}')
+  local_path = os.path.abspath(os.path.join(directory, corrupted_file))
   if local_path != corrupted_file_path and os.path.exists(local_path):
     os.remove(local_path)
   # Try to convert again without the corrupted file
@@ -650,8 +661,8 @@ def convert_except(e, argv):
   corrupted_file_match = re.search(r'Image file (.*?) is corrupted', message)
   if corrupted_file_match:
     corrupted_file_path = corrupted_file_match.group(1)
-    parts = corrupted_file_path.split('/')
-    corrupted_file = f'{parts[-2]}/{parts[-1]}'
+    parts = re.split(r'[\\/]', corrupted_file_path)
+    corrupted_file = os.path.join(*parts[-2:])
     fix_corrupted_file(corrupted_file, os.path.abspath(corrupted_file_path), argv)
   elif message.startswith('("One of workers crashed. Cause: \'float\' object cannot be interpreted as an integer"'):
     tip = 'https://github.com/Carleslc/InMangaKindle/issues/13'

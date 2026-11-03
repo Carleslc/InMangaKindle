@@ -3,6 +3,7 @@ venv/
 
 manga/
 
+.idea/
 .vscode/
 .cursor/
 .DS_Store

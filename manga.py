@@ -74,6 +74,7 @@ from colorama import Fore, Style, init as init_console_colors
 
 PROVIDER_WEBSITE = "https://inmanga.com"
 IMAGE_CDN = "https://cdn1.intomanga.com/i/m"
+FALLBACK_IMAGE_CDN = "https://pack-yak.intomanga.com/images/manga"
 CHAPTERS_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/getall?mangaIdentification="
 CHAPTER_PAGES_WEBSITE = f"{PROVIDER_WEBSITE}/chapter/chapterIndexControls?identification="
 MANGA_WEBSITE = f"{PROVIDER_WEBSITE}/ver/manga"
@@ -103,6 +104,7 @@ def set_args():
   parser.add_argument("--profile", help=f'Device profile (Use --profiles to list available profiles) [Default = {DEFAULT_PROFILE} (Kindle Paperwhite 1/2)]', default=DEFAULT_PROFILE)
   parser.add_argument("--profiles", action=ListProfiles, help="List available device profiles from Kindle Comic Converter")
   parser.add_argument("--format", help=f"Output format (Available options: {', '.join(FORMATS)}) [Default = {DEFAULT_FORMAT}]. If PNG is selected then no conversion to e-reader file will be done", default=DEFAULT_FORMAT)
+  parser.add_argument("--nokepub", action='store_true', help="If format is EPUB and using a Kobo profile, output file with '.epub' extension rather than '.kepub.epub'")
   parser.add_argument("--fullsize", action='store_true', help="Do not stretch images to the profile's device resolution")
   parser.add_argument("--color", action='store_true', help="Don't convert images to grayscale")
   parser.add_argument("--cache", action='store_true', help="Avoid downloading chapters and use already downloaded chapters instead (offline)")
@@ -272,13 +274,11 @@ def success(request, text='', ok=200, print_ok=True):
     if print_ok:
       print_colored(text if text else request.url, Fore.GREEN)
     return True
-  else:
-    text = f'{text}\n' if text else ''
-    print_colored(f'{text}[{request.status_code}] {request.url}', Fore.RED)
-    return False
+  return False
 
 def exit_if_fails(request):
   if not success(request, print_ok=False):
+    print_colored(f'[{request.status_code}] {request.url}', Fore.RED)
     exit(1)
 
 def write_file(path, data):
@@ -312,7 +312,7 @@ def decode(title):
 def plural(size):
   return 's' if size != 1 else ''
 
-def download(filename, url, directory='.', extension='png', text='', ok=200, referer=None):
+def download(filename, url, directory='.', extension='png', text='', ok=200, referer=None, fallback_url=None):
   path = encode_path(filename, extension, directory)
 
   # Check if file already exists
@@ -339,16 +339,43 @@ def download(filename, url, directory='.', extension='png', text='', ok=200, ref
   if referer:
     headers['Referer'] = referer
 
-  req = SCRAPER.get(url, headers=headers, allow_redirects=True)
-  data = req.content
+  req = None
+  try:
+    req = SCRAPER.get(url, headers=headers, allow_redirects=True)
+  except requests.exceptions.RequestException as e:
+    if fallback_url:
+      print_colored(f"Network error downloading {url}: {e}. Trying fallback: {fallback_url}", Fore.YELLOW)
+      try:
+        req = SCRAPER.get(fallback_url, headers=headers, allow_redirects=True)
+      except requests.exceptions.RequestException as fallback_error:
+        print_colored(f"Fallback network error: {fallback_error}", Fore.RED)
+        return False
+    else:
+      print_colored(f"Network error downloading {url}: {e}", Fore.RED)
+      return False
+
+  if req is not None and (req.status_code in [403, 404, 500] or (req.status_code == ok and len(req.content) == 0)):
+    if fallback_url:
+      print_colored(f"[{req.status_code}] Failed to download {url}. Trying fallback: {fallback_url}", Fore.YELLOW)
+      try:
+        req = SCRAPER.get(fallback_url, headers=headers, allow_redirects=True)
+      except requests.exceptions.RequestException as fallback_error:
+        print_colored(f"Fallback network error: {fallback_error}", Fore.RED)
+        return False
+
+  data = req.content if req is not None else b''
 
   if len(data) == 0:
     print_colored(f'{text if text else path} - Empty response from server', Fore.RED)
     return False
 
-  if success(req, text, ok, print_ok=bool(text)):
+  if req is not None and success(req, text, ok, print_ok=bool(text)):
     write_file(path, data)
     return True
+
+  if text:
+    status_str = f' ({req.status_code})' if req is not None else ''
+    print_colored(f'{text} - Failed{status_str}', Fore.RED)
   return False
 
 def manga_directory(manga):
@@ -557,12 +584,14 @@ def split_rotate_2_pages(rotate):
 def single(single):
   return str(0 if single else 2)
 
-def format_extension(format):
+def format_extension(format, profile='', nokepub=False):
   if format == 'KFX':
     # https://github.com/ciromattia/kcc/blob/v9.4.1/kindlecomicconverter/comic2ebook.py#L1466
     return 'epub'
   elif format == 'MOBI+EPUB':
     return 'mobi'
+  elif format == 'EPUB' and 'Ko' in profile and not nokepub:
+    return 'kepub.epub'
   return format.lower()
 
 def validate_chapter_images(chapters, manga, manga_title):
@@ -851,7 +880,8 @@ if __name__ == "__main__":
             page_id = page.get('value')
             page_number = page.get_text()
             image_url = f"{IMAGE_CDN}/{manga_uuid}/c/{chapter_uuid}/o/{page_id}.jpg"
-            download(page_number, image_url, chapter_dir, text=f'Page {i}/{len(pages)} ({100*i//len(pages)}%)', referer=chapter_url)
+            fallback_url = f"{FALLBACK_IMAGE_CDN}/{manga}/chapter/{chapter_number_id}/page/{page_number}/{page_id}"
+            download(page_number, image_url, chapter_dir, text=f'Page {i}/{len(pages)} ({100*i//len(pages)}%)', referer=chapter_url, fallback_url=fallback_url)
             i += 1
       except requests.exceptions.ConnectionError:
         network_error(f'Connection error while downloading chapter images from {chapter_url}')
@@ -862,7 +892,7 @@ if __name__ == "__main__":
     error(f'Invalid format: {args.format}', f"Available formats: {', '.join(FORMATS)}", halt=False)
     args.format = DEFAULT_FORMAT
 
-  extension = format_extension(args.format)
+  extension = format_extension(args.format, args.profile, args.nokepub)
 
   CHAPTERS = validate_chapter_images(CHAPTERS, manga, manga_title)
 
@@ -934,16 +964,39 @@ if __name__ == "__main__":
       if args.color:
         argv.append('--forcecolor')
 
+      if args.nokepub:
+        argv.append('--nokepub')
+
       def convert_to_ereader(title, path, src_chapter, src_dir):
         print_colored(title, Fore.BLUE)
         argv_convert = argv + ['--title', title, src_dir]
         cache_convert(argv_convert)
-        os.rename(output_path(chapter_interval=src_chapter, extension=extension), path)
+        src_path = output_path(chapter_interval=src_chapter, extension=extension)
+        dest_path = path
+        if not os.path.isfile(src_path):
+          if extension == 'epub':
+            alt_path = output_path(chapter_interval=src_chapter, extension='kepub.epub')
+            if os.path.isfile(alt_path):
+              src_path = alt_path
+              if dest_path.endswith('.epub') and not dest_path.endswith('.kepub.epub'):
+                dest_path = dest_path[:-5] + '.kepub.epub'
+          elif extension == 'kepub.epub':
+            alt_path = output_path(chapter_interval=src_chapter, extension='epub')
+            if os.path.isfile(alt_path):
+              src_path = alt_path
+              if dest_path.endswith('.kepub.epub'):
+                dest_path = dest_path[:-11] + '.epub'
+        if os.path.exists(dest_path):
+          os.remove(dest_path)
+        os.rename(src_path, dest_path)
         if args.format == 'MOBI+EPUB':
           path_epub = output_path(title, extension='epub')
-          os.rename(output_path(chapter_interval=src_chapter, extension='epub'), path_epub)
+          src_epub = output_path(chapter_interval=src_chapter, extension='epub')
+          if os.path.exists(path_epub):
+            os.remove(path_epub)
+          os.rename(src_epub, path_epub)
           done(path_epub)
-        done(path)
+        done(dest_path)
 
       if args.single:
         title, path = output_filename_path(manga_title, CHAPTERS, extension)

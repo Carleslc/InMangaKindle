@@ -72,38 +72,39 @@ A veces el comando `python` es `python3`. Comprueba que la versión sea superior
 
 ```
 uso: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY]
-                [--single] [--rotate] [--profile PROFILE] [--format FORMAT] [--fullsize]
+                [--single] [--rotate] [--profile PROFILE] [--format FORMAT] [--nokepub] [--fullsize]
                 [--cache] [--remove-alpha] [--update] [--version]
                 manga
 
 parámetros posicionales:
-  manga                 título del manga a descargar
+  manga                 título del manga a descargar
 
 parámetros opcionales:
-  -h, --help            muestra este mensaje de ayuda (en inglés)
+  -h, --help            muestra este mensaje de ayuda (en inglés)
   --chapters CHAPTERS, --chapter CHAPTERS
-                        capítulos a descargar. Formato: primero..último o capítulos
-                        con comas. Ejemplo: --chapters "3..last" descargará
-                        los capítulos del 3 hasta el último disponible.
-                        --chapter 3 descarga sólo el capítulo 3,
+                        capítulos a descargar. Formato: primero..último o capítulos
+                        con comas. Ejemplo: --chapters "3..last" descargará
+                        los capítulos del 3 hasta el último disponible.
+                        --chapter 3 descarga sólo el capítulo 3,
                         "3, 12" descarga el 3 y el 12, --chapters
                         "3..12, 15" descarga desde el 3 hasta el 12 y
-                        también el capítulo 15. Si no se proporciona este parámetro,
-                        se descargarán todos los capítulos disponibles.
-  --directory DIRECTORY
+                        también el capítulo 15. Si no se proporciona este parámetro,
+                        se descargarán todos los capítulos disponibles.
+  --directory DIRECTORY
                         directorio/carpeta para guardar las descargas. Por defecto: ./manga
-  --single              empaqueta los capítulos en un único archivo. Si no se proporciona este parámetro,
-                        cada capítulo se creará en un archivo independiente.
-  --rotate              rota las dobles páginas. Si no se proporciona este parámetro,
-                        las dobles páginas se dividirán en dos páginas separadas.
+  --single              empaqueta los capítulos en un único archivo. Si no se proporciona este parámetro,
+                        cada capítulo se creará en un archivo independiente.
+  --rotate              rota las dobles páginas. Si no se proporciona este parámetro,
+                        las dobles páginas se dividirán en dos páginas separadas.
   --profile PROFILE     Dispositivo (Usa --profiles para ver los perfiles disponibles)
                         [Por defecto = KPW (Kindle Paperwhite 1/2)]
   --profiles            Lista los perfiles de dispositivos disponibles en Kindle Comic Converter
   --format FORMAT       Formato de salida (Opciones disponibles: PNG, PDF, EPUB, MOBI, CBZ, KFX, MOBI+EPUB)
                         [Por defecto = EPUB]. Si se selecciona PNG entonces no se hará ninguna conversión.
-  --fullsize            No ajustar el tamaño de las imágenes al perfil del dispositivo
+  --nokepub             Si el formato requerido es EPUB y se usa un perfil Kobo, genera el archivo con extensión '.epub' en lugar de '.kepub.epub'
+  --fullsize            No ajustar el tamaño de las imágenes al perfil del dispositivo
   --color               No convertir las imágenes a escala de grises
-  --cache               Utiliza las imágenes en local sin descargar ningún capítulo (modo sin conexión)
+  --cache               Utiliza las imágenes en local sin descargar ningún capítulo (modo sin conexión)
   --remove-alpha        Elimina la transparencia de las imágenes (canal alfa)
   --update              Actualiza las dependencias del programa a la última versión
   --version, -v         Muestra la versión actual de InMangaKindle
@@ -183,7 +184,7 @@ Sometimes `python` command is `python3`. Check that your version is greater than
 
 ```
 usage: manga.py [-h] [--chapters CHAPTERS] [--directory DIRECTORY]
-                [--single] [--rotate] [--profile PROFILE] [--format FORMAT] [--fullsize]
+                [--single] [--rotate] [--profile PROFILE] [--format FORMAT] [--nokepub] [--fullsize]
                 [--cache] [--remove-alpha] [--update] [--version]
                 manga
 
@@ -214,6 +215,7 @@ options:
   --format FORMAT       Output format (Available options: PNG, PDF, EPUB, MOBI, CBZ, KFX, MOBI+EPUB)
                         [Default = EPUB]. If PNG is selected then no conversion to
                         e-reader file will be done
+  --nokepub             If format is EPUB and using a Kobo profile, output file with '.epub' extension rather than '.kepub.epub'
   --fullsize            Do not stretch images to the profile's device resolution
   --color               Don't convert images to grayscale
   --cache               Avoid downloading chapters and use already downloaded
